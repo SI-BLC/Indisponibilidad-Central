@@ -1,0 +1,126 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Estado general de las centrales de telecomunicaciones</p>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="guardarResultados()" [disabled]="guardandoResultados()"
+              matTooltip="Calcula y guarda los resultados del mes en curso (sobreescribe datos existentes)."
+              class="save-btn">
+        @if (guardandoResultados()) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
+        Guardar Resultados
+      </button>
+      <a mat-flat-button color="primary" routerLink="/agregar-central">
+        <mat-icon>add</mat-icon> Nueva Central
+      </a>
+    </div>
+  </div>
+
+  @if (ultimoGuardado()) {
+    <div class="guardado-banner" [class.has-errors]="ultimoGuardado()!.fallidos_total > 0">
+      <mat-icon>{{ ultimoGuardado()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+      <span>
+        Resultados guardados para <strong>{{ ultimoGuardado()!.periodo }}</strong> —
+        {{ ultimoGuardado()!.dias_procesados }} día(s) procesados,
+        {{ ultimoGuardado()!.exitosos_total }} exitosos
+        @if (ultimoGuardado()!.fallidos_total > 0) { , {{ ultimoGuardado()!.fallidos_total }} fallidos }
+      </span>
+      <a routerLink="/resultados" class="ver-link">Ver resultados <mat-icon>arrow_forward</mat-icon></a>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="loading-center"><mat-spinner diameter="44" /></div>
+  } @else if (error()) {
+    <p class="error-msg">{{ error() }}</p>
+  } @else {
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-inner">
+          <div class="icon-box primary"><mat-icon>bolt</mat-icon></div>
+          <div>
+            <div class="stat-number">{{ centrales().length }}</div>
+            <div class="stat-label text-muted">Total Centrales</div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-inner">
+          <div class="icon-box success"><mat-icon>check_circle</mat-icon></div>
+          <div>
+            <div class="stat-number text-success">{{ configuradas() }}</div>
+            <div class="stat-label text-muted">Configuradas</div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-inner">
+          <div class="icon-box warning"><mat-icon>warning</mat-icon></div>
+          <div>
+            <div class="stat-number text-warning">{{ sinGrupos() }}</div>
+            <div class="stat-label text-muted">Sin grupos</div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-inner">
+          <div class="icon-box primary"><mat-icon>link</mat-icon></div>
+          <div>
+            <div class="stat-number">{{ totalEnlaces() }}</div>
+            <div class="stat-label text-muted">Total Enlaces</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" style="margin-top:8px">Centrales</h2>
+    @if (centrales().length === 0) {
+      <div class="empty-state">
+        <mat-icon>cell_tower</mat-icon>
+        <p>No hay centrales configuradas. <a routerLink="/agregar-central">Agregar una</a>.</p>
+      </div>
+    } @else {
+      <div class="cards-grid">
+        @for (c of centrales(); track c.id) {
+          <div class="central-card">
+            <div class="central-card-top">
+              <div class="central-avatar">{{ c.nemo.slice(0,2) }}</div>
+              <div class="central-info">
+                <div class="central-nemo">{{ c.nemo }}</div>
+                <span class="badge" [ngClass]="tipoBadge[c.tipo]">{{ tipoLabels[c.tipo] }}</span>
+              </div>
+              <span class="status-dot" [class.ok]="c.tiene_grupos" [class.warn]="!c.tiene_grupos"></span>
+            </div>
+
+            <div class="central-stats">
+              <div class="mini-stat">
+                <mat-icon>link</mat-icon>
+                <span>{{ c.cant_enlaces }} enlace(s)</span>
+              </div>
+              <div class="mini-stat">
+                <mat-icon [style.color]="c.tiene_grupos ? '#4bd08b' : '#f8c076'">
+                  {{ c.tiene_grupos ? 'layers' : 'layers_clear' }}
+                </mat-icon>
+                <span>{{ c.tiene_grupos ? 'Grupos OK' : 'Sin grupos' }}</span>
+              </div>
+            </div>
+
+            <div class="central-actions">
+              <a mat-stroked-button [routerLink]="['/reportes']" [queryParams]="{ central: c.id }">
+                <mat-icon>bar_chart</mat-icon> Reporte
+              </a>
+              <a mat-stroked-button [routerLink]="['/editar-central']" [queryParams]="{ id: c.id }">
+                <mat-icon>edit</mat-icon> Editar
+              </a>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

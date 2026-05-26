@@ -1,0 +1,165 @@
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+}
+
+.header-left {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.back-btn { color: #7c839d; }
+
+.resumen-header {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+.resumen-label { font-size: .68rem; font-weight: 700; color: #7c839d; text-transform: uppercase; letter-spacing: .08em; }
+.resumen-valor { font-family: monospace; font-size: 1.4rem; font-weight: 800; color: #ff6b6b; }
+.resumen-seg   { font-size: .72rem; color: #7c839d; font-family: monospace; }
+
+// ─── Alertas ────────────────────────────────────────────────────────────────
+
+.alert-panel {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: rgba(250, 137, 107, .08); border: 1px solid rgba(250, 137, 107, .3);
+  border-radius: 10px; padding: 14px 18px; margin-bottom: 20px;
+  mat-icon { color: #fa896b; flex-shrink: 0; margin-top: 2px; }
+}
+.alert-title { font-size: .85rem; font-weight: 700; color: #fa896b; margin-bottom: 6px; }
+.alert-item  { font-size: .8rem; color: #e3e5ef; }
+
+// ─── Resumen Tipo 2 ──────────────────────────────────────────────────────────
+
+.summary-row {
+  display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px;
+}
+
+.summary-card {
+  flex: 1; min-width: 160px;
+  background: #131720; border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px; padding: 14px 18px;
+  display: flex; flex-direction: column; gap: 3px;
+  &.summary-total {
+    border-color: rgba(255,107,107,.25);
+    background: rgba(255,107,107,.04);
+  }
+}
+.s-label { font-size: .68rem; font-weight: 700; color: #7c839d; text-transform: uppercase; letter-spacing: .08em; }
+.s-val   { font-family: monospace; font-size: 1.1rem; font-weight: 800; }
+.s-seg   { font-size: .72rem; color: #7c839d; font-family: monospace; }
+.val-red    { color: #ff6b6b; }
+.val-orange { color: #f8c076; }
+
+// ─── Paneles ─────────────────────────────────────────────────────────────────
+
+.panel {
+  background: #131720; border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px; padding: 20px; margin-bottom: 20px;
+}
+
+.panel-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .8rem; font-weight: 600; color: #7c839d;
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 18px;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+// ─── Timeline ────────────────────────────────────────────────────────────────
+
+.timeline-axis {
+  position: relative; height: 18px; margin-bottom: 6px;
+}
+.axis-tick {
+  position: absolute; transform: translateX(-50%);
+  font-size: .65rem; color: #7c839d; font-family: monospace;
+}
+
+.timeline-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 6px;
+  &.tl-efectiva { margin-top: 4px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 8px; }
+}
+
+.tl-label {
+  width: 72px; font-size: .72rem; font-weight: 700; color: #7c839d;
+  flex-shrink: 0; text-align: right;
+}
+
+.tl-bar-container {
+  flex: 1; height: 18px; background: rgba(255,255,255,.05);
+  border-radius: 4px; position: relative; overflow: hidden;
+}
+
+.tl-seg {
+  position: absolute; top: 0; height: 100%;
+  border-radius: 0; transition: opacity .1s;
+  &:hover { opacity: .8; cursor: default; }
+}
+
+.tl-legend {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px;
+}
+.leg-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: .72rem; color: #7c839d;
+}
+.leg-dot {
+  width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+}
+
+// ─── Tablas ──────────────────────────────────────────────────────────────────
+
+.table-scroll { overflow-x: auto; }
+
+.data-table {
+  width: 100%; border-collapse: collapse;
+  font-size: .82rem;
+
+  th {
+    text-align: left; padding: 8px 12px;
+    font-size: .68rem; font-weight: 700; color: #7c839d;
+    text-transform: uppercase; letter-spacing: .06em;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  td {
+    padding: 7px 12px; color: #e3e5ef;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  &.row-excluido td { opacity: .45; }
+  &.row-prop td     { background: rgba(248,192,118,.04); }
+}
+
+.row-excluido td { opacity: .45; }
+.row-prop     td { background: rgba(248,192,118,.04); }
+
+.mono       { font-family: monospace; }
+.val-red    { color: #ff6b6b; }
+.val-orange { color: #f8c076; }
+.seg-note    { color: #7c839d; font-size: .75em; }
+.enlace-cell       { color: #a0a8c0; font-weight: 600; letter-spacing: .02em; }
+.sin-cobertura-cell { color: #ff6b6b; font-weight: 700; }
+.row-sin-cobertura  { background: rgba(255,107,107,.06); border-top: 1px solid rgba(255,107,107,.2); }
+
+.pct-prim { color: #539bff; }
+.pct-bck  { color: #f8c076; }
+.pct-gap  { color: #ff6b6b; }
+
+// ─── Badges ──────────────────────────────────────────────────────────────────
+
+.badge-ok      { background: rgba(75,208,139,.12); color: #4bd08b; border-color: rgba(75,208,139,.25); }
+.badge-warning { background: rgba(248,192,118,.12); color: #f8c076; border-color: rgba(248,192,118,.25); }
+.badge-danger  { background: rgba(255,107,107,.12); color: #ff6b6b; border-color: rgba(255,107,107,.25); }
+
+// ─── Estados comunes ─────────────────────────────────────────────────────────
+
+.loading-center {
+  display: flex; justify-content: center; padding: 60px;
+}
+
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 60px 20px; color: #7c839d;
+  mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: .3; }
+}

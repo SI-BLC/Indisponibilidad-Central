@@ -1,0 +1,108 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Resultados de Indisponibilidad</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Indisponibilidad diaria por central</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filter-panel">
+    <div class="panel-title"><mat-icon>tune</mat-icon> Filtros</div>
+
+    <div class="rango-tabs">
+      <button [class.active]="rangoModo() === 'mes_actual'"    (click)="aplicarRango('mes_actual')">Mes actual</button>
+      <button [class.active]="rangoModo() === 'mes_anterior'"  (click)="aplicarRango('mes_anterior')">Mes anterior</button>
+      <button [class.active]="rangoModo() === 'personalizado'" (click)="aplicarRango('personalizado')">Personalizado</button>
+    </div>
+
+    <div class="filter-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Central</mat-label>
+        <mat-select [formControl]="form.controls.idCentral">
+          <mat-option [value]="null">Todas las centrales</mat-option>
+          @for (c of centrales(); track c.id) {
+            <mat-option [value]="c.id">{{ c.nemo }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha desde</mat-label>
+        <input matInput type="date" [formControl]="form.controls.fechaDesde" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha hasta</mat-label>
+        <input matInput type="date" [formControl]="form.controls.fechaHasta" />
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" (click)="buscar()" [disabled]="loading()" class="search-btn">
+        @if (loading()) { <mat-spinner diameter="16" /> }
+        @else { <mat-icon>search</mat-icon> }
+        Buscar
+      </button>
+    </div>
+  </div>
+
+  <!-- Resultados por día -->
+  @if (buscado()) {
+    @if (loading()) {
+      <div class="loading-center"><mat-spinner diameter="44" /></div>
+    } @else if (diasView().length === 0) {
+      <div class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <span>No se encontraron resultados para los filtros aplicados.</span>
+      </div>
+    } @else {
+      @for (dia of diasView(); track dia.fecha) {
+        <div class="dia-section">
+
+          <div class="dia-header">
+            <mat-icon>calendar_today</mat-icon>
+            <span class="dia-fecha">{{ dia.fecha }}</span>
+            <span class="dia-badge">{{ dia.centrales.length }} central(es) con novedades</span>
+          </div>
+
+          <div class="centrales-grid">
+            @for (card of dia.centrales; track card.id) {
+
+              <div class="central-card" (click)="abrirDetalle(card)" matTooltip="Ver detalle">
+
+                <div class="card-head">
+                  <div class="card-avatar">{{ (card.central_nemo ?? '??').slice(0, 2) }}</div>
+                  <div class="card-title-block">
+                    <div class="card-nemo">{{ card.central_nemo }}</div>
+                    <span class="badge" [ngClass]="tipoBadgeClass(card.central_tipo)">
+                      {{ tipoCentralLabel(card.central_tipo) }}
+                    </span>
+                  </div>
+                  @if (card.inconsistencia) {
+                    <mat-icon class="card-warn-icon" style="color:#fa896b"
+                      matTooltip="Inconsistencia en timestamps — requiere revisión">
+                      warning_amber
+                    </mat-icon>
+                  }
+                  <mat-icon class="card-arrow">chevron_right</mat-icon>
+                </div>
+
+                <div class="resumen-ind">
+                  <span class="ind-label">Indisponibilidad</span>
+                  <span class="ind-valor" [class.ind-cero]="!card.ind_total_seg">
+                    {{ segToHms(card.ind_total_seg) }}
+                  </span>
+                  @if (card.ind_total_seg) {
+                    <span class="ind-seg">{{ card.ind_total_seg | number:'1.0-0' }} seg</span>
+                  }
+                </div>
+
+              </div>
+
+            }
+          </div>
+
+        </div>
+      }
+    }
+  }
+</div>

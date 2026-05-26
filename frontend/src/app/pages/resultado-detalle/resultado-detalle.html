@@ -1,0 +1,235 @@
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <button mat-icon-button (click)="volver()" class="back-btn" matTooltip="Volver">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        @if (detalle(); as d) {
+          <h1 class="page-title">{{ d.central }} — {{ fecha }}</h1>
+          <p class="text-muted" style="margin:0;font-size:.875rem">
+            {{ tipoCentralLabel(d.tipo) }} · Detalle de indisponibilidad
+          </p>
+        } @else {
+          <h1 class="page-title">Detalle</h1>
+        }
+      </div>
+    </div>
+    @if (detalle(); as d) {
+      <div class="resumen-header">
+        <span class="resumen-label">Indisponibilidad total</span>
+        <span class="resumen-valor">{{ segToHms(d.ind_total_seg) }}</span>
+        <span class="resumen-seg">{{ d.ind_total_seg | number:'1.0-0' }} seg</span>
+      </div>
+    }
+  </div>
+
+  <!-- Loading / Error -->
+  @if (loading()) {
+    <div class="loading-center"><mat-spinner diameter="44" /></div>
+  } @else if (error()) {
+    <div class="empty-state">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  } @else if (detalle(); as d) {
+
+    <!-- Inconsistencias -->
+    @if (d.inconsistencias.length > 0) {
+      <div class="alert-panel">
+        <mat-icon>warning_amber</mat-icon>
+        <div>
+          <div class="alert-title">Inconsistencias detectadas — requiere revisión del operador</div>
+          @for (inc of d.inconsistencias; track inc.t1) {
+            <div class="alert-item">{{ inc.descripcion }} ({{ horaCorta(inc.t1) }})</div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Resumen Tipo 2 -->
+    @if (d.tipo === 2) {
+      <div class="summary-row">
+        <div class="summary-card">
+          <span class="s-label">Corte efectivo</span>
+          <span class="s-val val-red">{{ segToHms(d.corte_efectivo_seg) }}</span>
+          <span class="s-seg">{{ d.corte_efectivo_seg | number:'1.0-0' }} seg</span>
+        </div>
+        <div class="summary-card">
+          <span class="s-label">Ind. por datos</span>
+          <span class="s-val val-orange">{{ segToHms(d.ind_datos_seg) }}</span>
+          <span class="s-seg">{{ d.ind_datos_seg | number:'1.0-0' }} seg</span>
+        </div>
+        <div class="summary-card summary-total">
+          <span class="s-label">Total</span>
+          <span class="s-val val-red">{{ segToHms(d.ind_total_seg) }}</span>
+          <span class="s-seg">{{ d.ind_total_seg | number:'1.0-0' }} seg</span>
+        </div>
+      </div>
+    }
+
+    <!-- ──────────────── TIMELINE ──────────────── -->
+    <div class="panel">
+      <div class="panel-title"><mat-icon>timeline</mat-icon> Timeline del día</div>
+
+      <!-- Eje de horas -->
+      <div class="timeline-axis">
+        @for (h of [0,3,6,9,12,15,18,21,24]; track h) {
+          <span class="axis-tick" [style.left.%]="h / 24 * 100">{{ h }}:00</span>
+        }
+      </div>
+
+      <!-- Tipo 1 / 3: una sola barra -->
+      @if (d.tipo !== 2) {
+        <div class="timeline-row">
+          <span class="tl-label">Enlace</span>
+          <div class="tl-bar-container">
+            @for (seg of d.segments; track seg.inicio) {
+              <div class="tl-seg"
+                [style.left.%]="pct(seg.inicio)"
+                [style.width.%]="pctDur(seg.dur_seg)"
+                [style.background]="segColor(seg.estado)"
+                [matTooltip]="estadoLabel(seg.estado) + ' · ' + horaCorta(seg.inicio) + ' → ' + horaCorta(seg.fin) + ' (' + segToHms(seg.dur_seg) + ')'">
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Tipo 2: barra primario, barra backup, barra cobertura efectiva -->
+      @if (d.tipo === 2) {
+        <div class="timeline-row">
+          <span class="tl-label">Directo</span>
+          <div class="tl-bar-container">
+            @for (seg of d.segments; track seg.inicio) {
+              @if (seg.estado === 'prim' || seg.estado === 'ninguno' || seg.estado === 'ambos') {
+                <div class="tl-seg"
+                  [style.left.%]="pct(seg.inicio)"
+                  [style.width.%]="pctDur(seg.dur_seg)"
+                  [style.background]="seg.estado === 'prim' ? '#539bff' : 'rgba(255,107,107,.25)'"
+                  [matTooltip]="(seg.estado === 'prim' ? 'Activo' : 'Inactivo') + ' · ' + horaCorta(seg.inicio) + ' → ' + horaCorta(seg.fin)">
+                </div>
+              }
+            }
+          </div>
+        </div>
+        <div class="timeline-row">
+          <span class="tl-label">Backup</span>
+          <div class="tl-bar-container">
+            @for (seg of d.segments; track seg.inicio) {
+              @if (seg.estado === 'bck' || seg.estado === 'ninguno' || seg.estado === 'ambos') {
+                <div class="tl-seg"
+                  [style.left.%]="pct(seg.inicio)"
+                  [style.width.%]="pctDur(seg.dur_seg)"
+                  [style.background]="seg.estado === 'bck' ? '#f8c076' : 'rgba(255,107,107,.25)'"
+                  [matTooltip]="(seg.estado === 'bck' ? 'Activo' : 'Inactivo') + ' · ' + horaCorta(seg.inicio) + ' → ' + horaCorta(seg.fin)">
+                </div>
+              }
+            }
+          </div>
+        </div>
+        <div class="timeline-row tl-efectiva">
+          <span class="tl-label">Cobertura</span>
+          <div class="tl-bar-container">
+            @for (seg of d.segments; track seg.inicio) {
+              <div class="tl-seg"
+                [style.left.%]="pct(seg.inicio)"
+                [style.width.%]="pctDur(seg.dur_seg)"
+                [style.background]="seg.estado === 'ninguno' ? '#ff6b6b' : '#4bd08b'"
+                [matTooltip]="estadoLabel(seg.estado) + ' · ' + horaCorta(seg.inicio) + ' → ' + horaCorta(seg.fin) + ' (' + segToHms(seg.dur_seg) + ')'">
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Leyenda -->
+      <div class="tl-legend">
+        @if (d.tipo !== 2) {
+          <div class="leg-item"><span class="leg-dot" style="background:#4bd08b"></span>Disponible</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#ff6b6b"></span>Caído</div>
+        } @else {
+          <div class="leg-item"><span class="leg-dot" style="background:#539bff"></span>Enlace Directo activo</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#f8c076"></span>Enlace Backup activo</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#4bd08b"></span>Cobertura ok</div>
+          <div class="leg-item"><span class="leg-dot" style="background:#ff6b6b"></span>Sin cobertura</div>
+        }
+      </div>
+    </div>
+
+    <!-- Cortes -->
+    @if (d.cortes_efectivos.length > 0) {
+      <div class="panel">
+        <div class="panel-title"><mat-icon>link_off</mat-icon> Cortes {{ d.tipo === 2 ? 'efectivos' : 'de enlace' }}</div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ENLACE</th><th>INICIO</th><th>FIN</th><th>DURACIÓN</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of d.cortes_efectivos; track c.inicio + c.enlace) {
+              <tr [class.row-sin-cobertura]="c.enlace === 'Sin cobertura'">
+                <td class="mono" [class.enlace-cell]="c.enlace !== 'Sin cobertura'"
+                                 [class.sin-cobertura-cell]="c.enlace === 'Sin cobertura'">
+                  {{ c.enlace }}
+                </td>
+                <td class="mono">{{ horaCorta(c.inicio) }}</td>
+                <td class="mono">{{ horaCorta(c.fin) }}</td>
+                <td class="mono val-red">{{ segToHms(c.dur_seg) }} <span class="seg-note">({{ c.dur_seg | number:'1.0-0' }} seg)</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Tabla DAT -->
+    @if (d.periodos_dat.length > 0) {
+      <div class="panel">
+        <div class="panel-title"><mat-icon>table_chart</mat-icon> Calidad de datos — períodos 30 min</div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>PERÍODO</th>
+                @if (d.tipo === 2) {
+                  <th>DIRECTO</th><th>BACKUP</th><th>CORTE</th>
+                }
+                <th>TIPO</th>
+                <th>ESPERADOS</th><th>RECIBIDOS</th><th>BUENOS</th>
+                <th>NO REC.</th><th>INVÁLIDOS</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of d.periodos_dat; track p.intervalo_fin) {
+                <tr [class.row-excluido]="p.tipo_periodo === 'excluido'"
+                    [class.row-prop]="p.tipo_periodo === 'proporcional'">
+                  <td class="mono">{{ horaCorta(p.intervalo_fin) }}</td>
+                  @if (d.tipo === 2) {
+                    <td class="mono pct-prim">{{ p.prim_pct }}%</td>
+                    <td class="mono pct-bck">{{ p.bck_pct }}%</td>
+                    <td class="mono pct-gap">{{ p.gap_pct }}%</td>
+                  }
+                  <td>
+                    <span class="badge" [ngClass]="tipoPeriodoBadge(p.tipo_periodo)">
+                      {{ p.tipo_periodo ?? 'normal' }}
+                    </span>
+                  </td>
+                  <td class="mono">{{ p.esperados   | number:'1.0-1' }}</td>
+                  <td class="mono">{{ p.recibidos   | number:'1.0-1' }}</td>
+                  <td class="mono">{{ p.buenos      | number:'1.0-1' }}</td>
+                  <td class="mono" [class.val-red]="p.norecibidos > 0">{{ p.norecibidos | number:'1.0-1' }}</td>
+                  <td class="mono" [class.val-orange]="p.invalidos  > 0">{{ p.invalidos  | number:'1.0-1' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+  }
+</div>

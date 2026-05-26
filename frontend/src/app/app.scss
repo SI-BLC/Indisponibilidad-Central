@@ -1,0 +1,23 @@
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidenav-container {
+  flex: 1;
+  margin-top: 64px;
+  overflow: hidden;
+}
+
+.sidenav {
+  width: 260px;
+  overflow-x: hidden;
+  transition: width 0.2s cubic-bezier(.4,0,.2,1);
+}
+
+.main-content {
+  overflow-y: auto;
+  height: 100%;
+}

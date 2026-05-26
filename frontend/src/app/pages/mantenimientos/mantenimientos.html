@@ -1,0 +1,98 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mantenimientos</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Programá ventanas de mantenimiento por enlace</p>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-panel">
+    <div class="panel-title"><mat-icon>build</mat-icon> Programar Mantenimiento</div>
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Central</mat-label>
+        <mat-select formControlName="idCentral" (selectionChange)="onCentralChange($event.value)">
+          @for (c of centrales(); track c.id) {
+            <mat-option [value]="c.id">{{ c.nemo }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Enlace</mat-label>
+        <mat-select formControlName="idEnlace" (selectionChange)="onEnlaceChange($event.value)">
+          @for (e of enlaces(); track e.id) {
+            <mat-option [value]="e.id">{{ e.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo">
+          @for (t of tiposMant; track t.value) {
+            <mat-option [value]="t.value">{{ t.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha inicio</mat-label>
+        <input matInput type="datetime-local" formControlName="inicio" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha fin</mat-label>
+        <input matInput type="datetime-local" formControlName="fin" />
+      </mat-form-field>
+
+      <div class="form-submit">
+        <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
+          <mat-icon>add</mat-icon> Programar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  @if (mantenimientos().length > 0) {
+    <div class="table-panel">
+      <div class="table-header">
+        <span class="section-title" style="margin:0">Mantenimientos programados</span>
+        <span class="badge badge-muted">{{ mantenimientos().length }}</span>
+      </div>
+      <table mat-table [dataSource]="mantenimientos()">
+        <ng-container matColumnDef="enlace">
+          <th mat-header-cell *matHeaderCellDef>ENLACE ID</th>
+          <td mat-cell *matCellDef="let m">
+            <span class="link-id">#{{ m.idenlace }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>TIPO</th>
+          <td mat-cell *matCellDef="let m">
+            <span class="badge" [ngClass]="tipoBadge(m.tipo)">{{ tipoLabel(m.tipo) }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="inicio">
+          <th mat-header-cell *matHeaderCellDef>INICIO</th>
+          <td mat-cell *matCellDef="let m">{{ m.inicio | date:'dd/MM/yy HH:mm' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="fin">
+          <th mat-header-cell *matHeaderCellDef>FIN</th>
+          <td mat-cell *matCellDef="let m">{{ m.fin | date:'dd/MM/yy HH:mm' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let m">
+            <button mat-icon-button (click)="eliminar(m.id)" class="delete-btn" aria-label="Eliminar">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;"></tr>
+      </table>
+    </div>
+  }
+</div>

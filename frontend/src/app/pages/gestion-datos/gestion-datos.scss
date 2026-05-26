@@ -1,0 +1,150 @@
+.page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
+
+.filter-panel, .table-panel {
+  background: #131720;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  overflow: hidden;
+}
+.filter-panel { padding: 20px; margin-bottom: 24px; }
+
+.panel-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; font-weight: 600; color: #7c839d;
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 16px;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+.filter-row {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  mat-form-field { flex: 1; min-width: 200px; }
+}
+
+.table-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+table { width: 100%; }
+
+.mono-id { font-family: monospace; color: #7c839d; font-size: 0.85rem; }
+
+.actions-cell { white-space: nowrap; width: 96px; }
+
+.edit-btn   { color: #3f4460 !important; &:hover { color: #5c85d6 !important; } }
+.delete-btn { color: #3f4460 !important; &:hover { color: #ff6b6b !important; } }
+.save-btn   { color: #3f4460 !important; &:hover { color: #4caf7d !important; } }
+.cancel-btn { color: #3f4460 !important; &:hover { color: #7c839d !important; } }
+
+.editing-row td { background: rgba(92, 133, 214, 0.06) !important; }
+
+.inline-input {
+  background: #1a1f2e;
+  border: 1px solid rgba(92,133,214,.4);
+  border-radius: 6px;
+  color: inherit;
+  font-size: 0.875rem;
+  padding: 4px 8px;
+  width: 72px;
+  outline: none;
+  &:focus { border-color: #5c85d6; }
+  &::-webkit-inner-spin-button { opacity: .4; }
+}
+
+.table-empty {
+  display: flex; align-items: center; gap: 8px; justify-content: center;
+  padding: 32px; color: #7c839d;
+  mat-icon { opacity: .4; }
+}
+
+.add-grupo-form {
+  padding: 20px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.add-grupo-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; font-weight: 600; color: #7c839d;
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 12px;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+}
+
+.add-row {
+  display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap;
+  mat-form-field { width: 120px; }
+  button { margin-top: 4px; height: 56px; border-radius: 8px !important; font-weight: 700 !important; }
+}
+
+.central-panel {
+  background: #131720;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.central-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; margin-bottom: 16px;
+}
+
+.central-panel-actions {
+  display: flex; gap: 8px; align-items: center;
+}
+
+.import-all-btn { color: #4bd08b !important; border-color: rgba(75,208,139,.3) !important; }
+
+.badge-link {
+  font-size: .7rem; font-weight: 700; border-radius: 20px;
+  padding: 2px 8px; flex-shrink: 0;
+  &.nuevo  { background: rgba(83,155,255,.12); border: 1px solid rgba(83,155,255,.3); color: #539bff; }
+  &.existe { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #7c839d; }
+}
+
+.gc-table { width: 100%; }
+
+.central-loading {
+  display: flex; align-items: center; gap: 12px;
+  color: #7c839d; padding: 8px 0;
+}
+
+.grupos-central-list {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+
+.grupo-central-chip {
+  display: flex; align-items: center; gap: 4px;
+  border-radius: 20px; padding: 4px 12px 4px 16px;
+  font-size: 0.875rem; font-weight: 600;
+
+  &.chip-new {
+    background: rgba(83,155,255,.12);
+    border: 1px solid rgba(83,155,255,.3);
+    color: #539bff;
+  }
+
+  &.chip-exists {
+    background: rgba(75,208,139,.08);
+    border: 1px solid rgba(75,208,139,.2);
+    color: #4bd08b;
+  }
+}
+
+.chip-number { min-width: 20px; text-align: center; }
+
+.chip-import-btn {
+  width: 28px !important; height: 28px !important;
+  line-height: 28px !important;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; color: #539bff; }
+  &:hover mat-icon { color: #7ab3ff; }
+}
+
+.chip-check-icon {
+  font-size: 18px; width: 18px; height: 18px;
+  color: #4bd08b; opacity: .8;
+}

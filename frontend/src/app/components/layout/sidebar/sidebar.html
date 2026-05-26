@@ -1,0 +1,26 @@
+<div class="sidebar-wrapper">
+  <div class="sidebar-section-label">MENÚ PRINCIPAL</div>
+  <nav class="sidebar-nav">
+    @for (item of navItems; track item.route) {
+      <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+        <div class="nav-icon-wrap">
+          <mat-icon>{{ item.icon }}</mat-icon>
+        </div>
+        <span class="nav-label">{{ item.label }}</span>
+        @if (item.badge) {
+          <span class="nav-badge">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="footer-info">
+      <div class="footer-dot"></div>
+      <div>
+        <div class="footer-title">Sistema Activo</div>
+        <div class="footer-sub">v1.0 &mdash; Indisponibilidad</div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,126 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Cálculos</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Guardar resultados de disponibilidad por período</p>
+    </div>
+  </div>
+
+  <div class="calculos-grid">
+
+    <!-- Mes actual -->
+    <div class="calc-card">
+      <div class="calc-card-header">
+        <div class="calc-icon-box primary">
+          <mat-icon>calendar_today</mat-icon>
+        </div>
+        <div>
+          <div class="calc-title">Mes Actual</div>
+          <div class="calc-subtitle text-muted">Calcula y guarda los resultados del mes en curso</div>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="guardarResultadosMesActual()" [disabled]="guardandoMesActual()"
+              matTooltip="Calcula y guarda los resultados del mes en curso (sobreescribe datos existentes)."
+              class="save-btn">
+        @if (guardandoMesActual()) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
+        Guardar Resultados
+      </button>
+
+      @if (ultimoGuardadoMesActual()) {
+        <div class="guardado-banner" [class.has-errors]="ultimoGuardadoMesActual()!.fallidos_total > 0">
+          <mat-icon>{{ ultimoGuardadoMesActual()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>
+            Resultados guardados para <strong>{{ ultimoGuardadoMesActual()!.periodo }}</strong> —
+            {{ ultimoGuardadoMesActual()!.dias_procesados }} día(s) procesados,
+            {{ ultimoGuardadoMesActual()!.exitosos_total }} exitosos
+            @if (ultimoGuardadoMesActual()!.fallidos_total > 0) { , {{ ultimoGuardadoMesActual()!.fallidos_total }} fallidos }
+          </span>
+          <a routerLink="/resultados" class="ver-link">Ver resultados <mat-icon>arrow_forward</mat-icon></a>
+        </div>
+      }
+    </div>
+
+    <!-- Mes anterior -->
+    <div class="calc-card">
+      <div class="calc-card-header">
+        <div class="calc-icon-box warning">
+          <mat-icon>history</mat-icon>
+        </div>
+        <div>
+          <div class="calc-title">Mes Anterior</div>
+          <div class="calc-subtitle text-muted">Calcula y guarda los resultados del mes anterior</div>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="guardarResultadosMesAnterior()" [disabled]="guardandoMesAnterior()"
+              matTooltip="Calcula y guarda los resultados del mes anterior (sobreescribe datos existentes)."
+              class="save-btn save-btn-warning">
+        @if (guardandoMesAnterior()) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
+        Guardar Resultados Mes Anterior
+      </button>
+
+      @if (ultimoGuardadoMesAnterior()) {
+        <div class="guardado-banner" [class.has-errors]="ultimoGuardadoMesAnterior()!.fallidos_total > 0">
+          <mat-icon>{{ ultimoGuardadoMesAnterior()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>
+            Resultados guardados para <strong>{{ ultimoGuardadoMesAnterior()!.periodo }}</strong> —
+            {{ ultimoGuardadoMesAnterior()!.dias_procesados }} día(s) procesados,
+            {{ ultimoGuardadoMesAnterior()!.exitosos_total }} exitosos
+            @if (ultimoGuardadoMesAnterior()!.fallidos_total > 0) { , {{ ultimoGuardadoMesAnterior()!.fallidos_total }} fallidos }
+          </span>
+          <a routerLink="/resultados" class="ver-link">Ver resultados <mat-icon>arrow_forward</mat-icon></a>
+        </div>
+      }
+    </div>
+
+
+    <!-- Día específico -->
+    <div class="calc-card">
+      <div class="calc-card-header">
+        <div class="calc-icon-box success">
+          <mat-icon>event_available</mat-icon>
+        </div>
+        <div>
+          <div class="calc-title">Día Específico</div>
+          <div class="calc-subtitle text-muted">Recalcula un día puntual (útil para debug y correcciones)</div>
+        </div>
+      </div>
+
+      <div class="dia-input-row">
+        <input type="date" [value]="fechaDia()"
+               (change)="fechaDia.set($any($event.target).value)"
+               class="date-input" />
+        <button mat-stroked-button (click)="guardarResultadosDia()" [disabled]="guardandoDia() || !fechaDia()"
+                matTooltip="Calcula y guarda solo el día seleccionado."
+                class="save-btn save-btn-success">
+          @if (guardandoDia()) {
+            <mat-spinner diameter="16" />
+          } @else {
+            <mat-icon>refresh</mat-icon>
+          }
+          Recalcular
+        </button>
+      </div>
+
+      @if (ultimoGuardadoDia()) {
+        <div class="guardado-banner" [class.has-errors]="ultimoGuardadoDia()!.fallidos > 0">
+          <mat-icon>{{ ultimoGuardadoDia()!.fallidos === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>
+            <strong>{{ ultimoGuardadoDia()!.fecha }}</strong> —
+            {{ ultimoGuardadoDia()!.exitosos }} central(es) OK
+            @if (ultimoGuardadoDia()!.fallidos > 0) { , {{ ultimoGuardadoDia()!.fallidos }} fallidas }
+          </span>
+          <a routerLink="/resultados" class="ver-link">Ver resultados <mat-icon>arrow_forward</mat-icon></a>
+        </div>
+      }
+    </div>
+
+  </div>
+</div>

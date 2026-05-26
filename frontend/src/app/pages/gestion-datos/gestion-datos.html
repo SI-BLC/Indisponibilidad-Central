@@ -1,0 +1,312 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestión de Datos</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Configuración de grupos por enlace</p>
+    </div>
+  </div>
+
+  <div class="filter-panel">
+    <div class="panel-title"><mat-icon>filter_list</mat-icon> Seleccionar Enlace</div>
+    <div class="filter-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Central</mat-label>
+        <mat-select [formControl]="form.controls.idCentral" (selectionChange)="onCentralChange($event.value)">
+          @for (c of centrales(); track c.id) {
+            <mat-option [value]="c.id">{{ c.nemo }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Enlace</mat-label>
+        <mat-select [formControl]="form.controls.idEnlace" (selectionChange)="onEnlaceChange($event.value)">
+          @for (e of enlaces(); track e.id) {
+            <mat-option [value]="e.id">{{ e.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Panel: grupos obtenidos desde la central -->
+  @if (form.value.idEnlace && centralSeleccionada()?.ip1) {
+    <div class="central-panel">
+      <div class="central-panel-header">
+        <div class="panel-title" style="margin:0"><mat-icon>router</mat-icon> Grupos de la central</div>
+        <div class="central-panel-actions">
+          @if (gruposCentral().length > 0) {
+            @if (nuevosGruposCount > 0) {
+              <button mat-stroked-button (click)="importarTodos()" class="import-all-btn">
+                <mat-icon>save_alt</mat-icon> Guardar nuevos ({{ nuevosGruposCount }})
+              </button>
+            }
+            <button mat-stroked-button (click)="obtenerGruposDeCentral()" [disabled]="loadingGruposCentral()">
+              <mat-icon>refresh</mat-icon> Actualizar
+            </button>
+          } @else {
+            <button mat-flat-button color="accent" (click)="obtenerGruposDeCentral()" [disabled]="loadingGruposCentral()">
+              @if (loadingGruposCentral()) {
+                <mat-spinner diameter="18" style="display:inline-block;margin-right:8px"></mat-spinner>
+              } @else {
+                <mat-icon>cloud_download</mat-icon>
+              }
+              Obtener grupos
+            </button>
+          }
+        </div>
+      </div>
+
+      <p style="color:orange;font-size:.8rem;margin:4px 0">DEBUG grupos: {{ gruposCentral().length }} | loading: {{ loadingGruposCentral() }}</p>
+
+      @if (loadingGruposCentral()) {
+        <div class="central-loading">
+          <mat-spinner diameter="24"></mat-spinner>
+          <span>Consultando central...</span>
+        </div>
+      } @else if (gruposCentral().length > 0) {
+        <table mat-table [dataSource]="gruposCentral()" class="gc-table">
+
+          <!-- Grupo N° -->
+          <ng-container matColumnDef="grupo">
+            <th mat-header-cell *matHeaderCellDef>GRUPO N°</th>
+            <td mat-cell *matCellDef="let gc">
+              <span class="badge badge-primary">{{ gc.grupo }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Tipo -->
+          <ng-container matColumnDef="tipo">
+            <th mat-header-cell *matHeaderCellDef>TIPO</th>
+            <td mat-cell *matCellDef="let gc; let i = index">
+              @if (editandoGrupoCentralIdx() === i) {
+                <input class="inline-input" type="number" [formControl]="formGrupoCentral.controls.tipo" />
+              } @else { {{ gc.tipo }} }
+            </td>
+          </ng-container>
+
+          <!-- Periódico -->
+          <ng-container matColumnDef="periodico">
+            <th mat-header-cell *matHeaderCellDef>PERIÓDICO</th>
+            <td mat-cell *matCellDef="let gc; let i = index">
+              @if (editandoGrupoCentralIdx() === i) {
+                <input class="inline-input" type="number" [formControl]="formGrupoCentral.controls.periodico" />
+              } @else { {{ gc.periodico }} }
+            </td>
+          </ng-container>
+
+          <!-- Período -->
+          <ng-container matColumnDef="periodo">
+            <th mat-header-cell *matHeaderCellDef>PERÍODO</th>
+            <td mat-cell *matCellDef="let gc; let i = index">
+              @if (editandoGrupoCentralIdx() === i) {
+                <input class="inline-input" type="number" [formControl]="formGrupoCentral.controls.periodo" />
+              } @else { {{ gc.periodo }} }
+            </td>
+          </ng-container>
+
+          <!-- Dirección -->
+          <ng-container matColumnDef="direccion">
+            <th mat-header-cell *matHeaderCellDef>DIRECCIÓN</th>
+            <td mat-cell *matCellDef="let gc; let i = index">
+              @if (editandoGrupoCentralIdx() === i) {
+                <input class="inline-input" type="number" [formControl]="formGrupoCentral.controls.direccion" />
+              } @else { {{ gc.direccion }} }
+            </td>
+          </ng-container>
+
+          <!-- Calcular -->
+          <ng-container matColumnDef="calcular">
+            <th mat-header-cell *matHeaderCellDef>CALCULAR</th>
+            <td mat-cell *matCellDef="let gc; let i = index">
+              @if (editandoGrupoCentralIdx() === i) {
+                <input class="inline-input" type="number" [formControl]="formGrupoCentral.controls.calcular" />
+              } @else { {{ gc.calcular }} }
+            </td>
+          </ng-container>
+
+          <!-- Estado -->
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>ESTADO</th>
+            <td mat-cell *matCellDef="let gc">
+              @if (gc.esNuevo) {
+                <span class="badge-link nuevo">Nuevo</span>
+              } @else {
+                <span class="badge-link existe">Ya existe</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Acciones -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let gc; let i = index" class="actions-cell">
+              @if (editandoGrupoCentralIdx() === i) {
+                <button mat-icon-button class="save-btn" matTooltip="Confirmar" (click)="guardarEdicionGrupoCentral(i)">
+                  <mat-icon>check</mat-icon>
+                </button>
+                <button mat-icon-button class="cancel-btn" matTooltip="Cancelar" (click)="cancelarEdicionGrupoCentral()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              } @else {
+                <button mat-icon-button class="edit-btn" matTooltip="Editar" (click)="iniciarEdicionGrupoCentral(i)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                @if (gc.esNuevo) {
+                  <button mat-icon-button class="save-btn" matTooltip="Guardar en BD" (click)="importarGrupo(gc, i)">
+                    <mat-icon>save_alt</mat-icon>
+                  </button>
+                }
+                <button mat-icon-button class="delete-btn" matTooltip="Quitar de lista" (click)="eliminarGrupoCentral(i)">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="gcColumns"></tr>
+          <tr mat-row *matRowDef="let r; columns: gcColumns;"></tr>
+        </table>
+      }
+    </div>
+  }
+
+  <!-- Panel: grupos en DB -->
+  @if (form.value.idEnlace) {
+    <div class="table-panel">
+      <div class="table-header">
+        <span class="section-title" style="margin:0">Grupos configurados</span>
+        <span class="badge badge-primary">{{ grupos().length }} grupo(s)</span>
+      </div>
+
+      <table mat-table [dataSource]="grupos()">
+
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let g"><span class="mono-id">{{ g.id }}</span></td>
+        </ng-container>
+
+        <ng-container matColumnDef="grupo">
+          <th mat-header-cell *matHeaderCellDef>GRUPO N°</th>
+          <td mat-cell *matCellDef="let g">
+            @if (editandoId() === g.id) {
+              <input class="inline-input" type="number" [formControl]="formEditar.controls.grupo" />
+            } @else {
+              <span class="badge badge-primary">{{ g.grupo }}</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>TIPO</th>
+          <td mat-cell *matCellDef="let g">
+            @if (editandoId() === g.id) {
+              <input class="inline-input" type="number" [formControl]="formEditar.controls.tipo" />
+            } @else { {{ g.tipo }} }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="periodico">
+          <th mat-header-cell *matHeaderCellDef>PERIÓDICO</th>
+          <td mat-cell *matCellDef="let g">
+            @if (editandoId() === g.id) {
+              <input class="inline-input" type="number" [formControl]="formEditar.controls.periodico" />
+            } @else { {{ g.periodico }} }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="periodo">
+          <th mat-header-cell *matHeaderCellDef>PERÍODO</th>
+          <td mat-cell *matCellDef="let g">
+            @if (editandoId() === g.id) {
+              <input class="inline-input" type="number" [formControl]="formEditar.controls.periodo" />
+            } @else { {{ g.periodo }} }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="direccion">
+          <th mat-header-cell *matHeaderCellDef>DIRECCIÓN</th>
+          <td mat-cell *matCellDef="let g">
+            @if (editandoId() === g.id) {
+              <input class="inline-input" type="number" [formControl]="formEditar.controls.direccion" />
+            } @else { {{ g.direccion }} }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="calcular">
+          <th mat-header-cell *matHeaderCellDef>CALCULAR</th>
+          <td mat-cell *matCellDef="let g">
+            @if (editandoId() === g.id) {
+              <input class="inline-input" type="number" [formControl]="formEditar.controls.calcular" />
+            } @else { {{ g.calcular }} }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let g" class="actions-cell">
+            @if (editandoId() === g.id) {
+              <button mat-icon-button class="save-btn" matTooltip="Guardar"
+                      [disabled]="formEditar.invalid" (click)="guardarEdicion(g.id)">
+                <mat-icon>check</mat-icon>
+              </button>
+              <button mat-icon-button class="cancel-btn" matTooltip="Cancelar" (click)="cancelarEdicion()">
+                <mat-icon>close</mat-icon>
+              </button>
+            } @else {
+              <button mat-icon-button class="edit-btn" matTooltip="Editar" (click)="editarGrupo(g)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="eliminarGrupo(g.id)">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="grupoColumns"></tr>
+        <tr mat-row *matRowDef="let r; columns: grupoColumns;"
+            [class.editing-row]="editandoId() === r.id"></tr>
+      </table>
+
+      @if (grupos().length === 0) {
+        <div class="table-empty">
+          <mat-icon>layers_clear</mat-icon>
+          <span>Sin grupos configurados para este enlace</span>
+        </div>
+      }
+
+      <div class="add-grupo-form">
+        <div class="add-grupo-title"><mat-icon>add_circle_outline</mat-icon> Agregar grupo</div>
+        <form [formGroup]="formGrupo" (ngSubmit)="agregarGrupo()" class="add-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Grupo N°</mat-label>
+            <input matInput type="number" formControlName="grupo" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo</mat-label>
+            <input matInput type="number" formControlName="tipo" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Periódico</mat-label>
+            <input matInput type="number" formControlName="periodico" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Período</mat-label>
+            <input matInput type="number" formControlName="periodo" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Dirección</mat-label>
+            <input matInput type="number" formControlName="direccion" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Calcular</mat-label>
+            <input matInput type="number" formControlName="calcular" />
+          </mat-form-field>
+          <button mat-flat-button color="primary" type="submit" [disabled]="formGrupo.invalid">
+            <mat-icon>add</mat-icon> Agregar
+          </button>
+        </form>
+      </div>
+    </div>
+  }
+</div>

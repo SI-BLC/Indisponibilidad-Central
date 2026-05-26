@@ -1,0 +1,73 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <mat-card-content>
+      <div class="login-header">
+        <div class="login-icon">
+          <img src="../../../assets/icons/logo.ico" alt="Login Icon">
+        </div>
+        <h1 class="login-title">Indisponibilidad</h1>
+        <p class="login-subtitle">Ingresá con tu usuario de red</p>
+      </div>
+
+      <form class="login-form" (ngSubmit)="onSubmit()" #loginForm="ngForm">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Usuario</mat-label>
+          <mat-icon matPrefix>person</mat-icon>
+          <input
+            matInput
+            name="username"
+            [(ngModel)]="username"
+            placeholder="tu.usuario"
+            autocomplete="username"
+            required
+            [disabled]="loading()"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contraseña</mat-label>
+          <mat-icon matPrefix>lock</mat-icon>
+          <input
+            matInput
+            name="password"
+            [(ngModel)]="password"
+            [type]="hidePassword() ? 'password' : 'text'"
+            autocomplete="current-password"
+            required
+            [disabled]="loading()"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="hidePassword.set(!hidePassword())"
+            [attr.aria-label]="hidePassword() ? 'Mostrar contraseña' : 'Ocultar contraseña'"
+          >
+            <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        @if (errorMessage()) {
+          <div class="error-message">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ errorMessage() }}</span>
+          </div>
+        }
+
+        <button
+          mat-flat-button
+          class="login-btn"
+          type="submit"
+          [disabled]="loading() || !username || !password"
+        >
+          @if (loading()) {
+            <mat-spinner diameter="20" />
+            <span>Verificando...</span>
+          } @else {
+            <span>Iniciar sesión</span>
+          }
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,0 +1,166 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reporte de Disponibilidad</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Análisis de cortes y disponibilidad por central y período</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filter-panel">
+    <div class="filter-label">
+      <mat-icon>tune</mat-icon>
+      <span>Parámetros del Reporte</span>
+    </div>
+
+    <!-- Toggle de modo de fecha -->
+    <div class="modo-selector">
+      <mat-button-toggle-group [value]="modo()" (change)="onModoChange($event)">
+        <mat-button-toggle value="libre">
+          <mat-icon>date_range</mat-icon>
+          Rango libre
+        </mat-button-toggle>
+        <mat-button-toggle value="24h">
+          <mat-icon>today</mat-icon>
+          +24 horas
+        </mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="generar()" class="filter-form">
+      <mat-form-field appearance="outline">
+        <mat-label>Central</mat-label>
+        <mat-select formControlName="idCentral">
+          @for (c of centrales(); track c.id) {
+            <mat-option [value]="c.id">{{ c.nemo }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha inicio</mat-label>
+        <input matInput [matDatepicker]="pickerInicio" formControlName="fechaInicio" readonly />
+        <mat-datepicker-toggle matIconSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+        <mat-datepicker #pickerInicio></mat-datepicker>
+      </mat-form-field>
+
+      @if (modo() === 'libre') {
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha fin</mat-label>
+          <input matInput [matDatepicker]="pickerFin" formControlName="fechaFin" readonly />
+          <mat-datepicker-toggle matIconSuffix [for]="pickerFin"></mat-datepicker-toggle>
+          <mat-datepicker #pickerFin></mat-datepicker>
+        </mat-form-field>
+      } @else {
+        <div class="fecha-fin-auto">
+          <mat-icon>schedule</mat-icon>
+          <div>
+            <div class="fecha-fin-auto-label">Fecha fin</div>
+            <div class="fecha-fin-auto-value">Inicio + 24 horas</div>
+          </div>
+        </div>
+      }
+
+      <button mat-flat-button color="primary" type="submit" [disabled]="!formValido || loading()" class="gen-btn">
+        @if (loading()) { <mat-spinner diameter="18" /> }
+        @else { <ng-container><mat-icon>play_arrow</mat-icon> Generar</ng-container> }
+      </button>
+    </form>
+  </div>
+
+  @if (error()) { <p class="error-msg">{{ error() }}</p> }
+
+  @if (reporte(); as r) {
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card" [class.kpi-ok]="r.disponibilidad_pct >= 99.5" [class.kpi-warn]="r.disponibilidad_pct < 99.5">
+        <div class="kpi-icon">
+          <mat-icon>{{ r.disponibilidad_pct >= 99.5 ? 'verified' : 'warning' }}</mat-icon>
+        </div>
+        <div class="kpi-value">{{ r.disponibilidad_pct | number:'1.3-3' }}%</div>
+        <div class="kpi-label">Disponibilidad</div>
+        <div class="kpi-sub">Central {{ r.nemo }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon warn-icon"><mat-icon>timer_off</mat-icon></div>
+        <div class="kpi-value">{{ formatMinutos(r.total_minutos_corte) }}</div>
+        <div class="kpi-label">Tiempo indisponible</div>
+        <div class="kpi-sub">Total del período</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon danger-icon"><mat-icon>bolt</mat-icon></div>
+        <div class="kpi-value">{{ r.cortes.length }}</div>
+        <div class="kpi-label">Cortes detectados</div>
+        <div class="kpi-sub">{{ cortesReales(r) }} real(es) · {{ cortesMant(r) }} mant.</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon info-icon"><mat-icon>schedule</mat-icon></div>
+        <div class="kpi-value">{{ formatMinutos(r.total_minutos_periodo) }}</div>
+        <div class="kpi-label">Período analizado</div>
+        <div class="kpi-sub">{{ r.fechaInicio | date:'dd/MM/yy' }} — {{ r.fechaFin | date:'dd/MM/yy' }}</div>
+      </div>
+    </div>
+
+    <!-- Tabla de cortes -->
+    <div class="table-panel">
+      <div class="table-header">
+        <span class="section-title" style="margin:0">Detalle de Cortes</span>
+        <span class="badge badge-muted">{{ filteredCortes().length }} registros</span>
+      </div>
+      <table mat-table [dataSource]="filteredCortes()" class="cortes-table">
+        <ng-container matColumnDef="central">
+          <th mat-header-cell *matHeaderCellDef>CENTRAL</th>
+          <td mat-cell *matCellDef="let c; let i = index"
+              [attr.rowspan]="i === 0 ? filteredCortes().length : null"
+              [style.display]="i !== 0 ? 'none' : ''">
+            <div class="central-cell">
+              <div class="central-nemo">{{ r.nemo }}</div>
+              <div class="central-tipo">{{ tipoCentralLabel(r.tipo_central) }}</div>
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="enlace">
+          <th mat-header-cell *matHeaderCellDef>ENLACE</th>
+          <td mat-cell *matCellDef="let c">
+            <div class="enlace-cell">
+              <div class="enlace-dot"></div>
+              {{ c.nombre_enlace }}
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="inicio">
+          <th mat-header-cell *matHeaderCellDef>INICIO</th>
+          <td mat-cell *matCellDef="let c">{{ c.inicio | date:'dd/MM/yy HH:mm' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="fin">
+          <th mat-header-cell *matHeaderCellDef>FIN</th>
+          <td mat-cell *matCellDef="let c">{{ c.fin | date:'dd/MM/yy HH:mm' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="duracion">
+          <th mat-header-cell *matHeaderCellDef>DURACIÓN</th>
+          <td mat-cell *matCellDef="let c">
+            <span class="duration-badge">{{ formatMinutos(c.duracion_minutos) }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>ESTADO</th>
+          <td mat-cell *matCellDef="let c">
+            @if (c.es_mantenimiento) {
+              <span class="badge badge-warning">Mant. {{ c.tipo }}</span>
+            } @else {
+              <span class="badge badge-danger">Corte</span>
+            }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+      @if (filteredCortes().length === 0) {
+        <div class="table-empty">
+          <mat-icon>check_circle</mat-icon>
+          <span>Sin cortes en el período seleccionado</span>
+        </div>
+      }
+    </div>
+  }
+</div>

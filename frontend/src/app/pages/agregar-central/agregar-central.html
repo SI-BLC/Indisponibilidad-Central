@@ -1,0 +1,149 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Agregar Central</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Registrá una nueva central de telecomunicaciones</p>
+    </div>
+  </div>
+
+  <div class="form-layout">
+    <div class="form-panel">
+      <div class="panel-icon-header">
+        <div class="icon-box primary"><mat-icon>electric_bolt</mat-icon></div>
+        <div>
+          <div style="font-weight:600;color:#e3e5ef">Nueva Central</div>
+          <div class="text-muted" style="font-size:.8rem">Completá los datos de configuración</div>
+        </div>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Código NEMO</mat-label>
+          <input matInput formControlName="nemo" placeholder="Ej: BCOG, MDZA, RSRI..." autocomplete="off" />
+          <mat-icon matSuffix style="color:#7c839d;font-size:18px">badge</mat-icon>
+          @if (form.controls.nemo.hasError('required') && form.controls.nemo.touched) {
+            <mat-error>El código NEMO es requerido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
+          <mat-label>Tipo de Central</mat-label>
+          <mat-select formControlName="tipo">
+            @for (t of tipos; track t.value) {
+              <mat-option [value]="t.value">
+                <div class="tipo-option">
+                  <mat-icon [style.color]="t.color">{{ t.icon }}</mat-icon>
+                  <div>
+                    <div>{{ t.label }}</div>
+                    <div class="tipo-desc">{{ t.desc }}</div>
+                  </div>
+                </div>
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="ip-row" style="margin-top:8px">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>IP Principal</mat-label>
+            <input matInput formControlName="ip1" placeholder="Ej: 192.168.1.100" autocomplete="off" />
+            <mat-icon matSuffix style="color:#7c839d;font-size:18px">router</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>IP Redundante <span style="font-size:.75em;color:#7c839d">(opcional)</span></mat-label>
+            <input matInput formControlName="ip2" placeholder="Ej: 192.168.1.101" autocomplete="off" />
+            <mat-icon matSuffix style="color:#7c839d;font-size:18px">router</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <a mat-stroked-button routerLink="/dashboard" class="cancel-btn">Cancelar</a>
+          <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || loading()" class="save-btn">
+            <mat-icon>save</mat-icon> Guardar Central
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Info panel -->
+    <div class="info-panel">
+      <div class="info-title"><mat-icon>info</mat-icon> Tipos de Central</div>
+      @for (t of tipos; track t.value) {
+        <div class="info-item">
+          <div class="info-item-icon" [style.background]="t.bgColor" [style.color]="t.color">
+            <mat-icon>{{ t.icon }}</mat-icon>
+          </div>
+          <div>
+            <div class="info-item-title">{{ t.label }}</div>
+            <div class="info-item-desc">{{ t.desc }}</div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Obtener enlaces -->
+  <div class="form-panel" style="margin-top:24px">
+    <div class="panel-icon-header">
+      <div class="icon-box primary"><mat-icon>cable</mat-icon></div>
+      <div>
+        <div style="font-weight:600;color:#e3e5ef">Obtener Enlaces</div>
+        <div class="text-muted" style="font-size:.8rem">Consultá los enlaces disponibles en la central por IP</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-top:12px">
+      <mat-form-field appearance="outline" style="flex:1">
+        <mat-label>IP de la Central</mat-label>
+        <input matInput [value]="ipCentral" (input)="ipCentral = $any($event.target).value"
+          placeholder="Ej: 192.168.1.100" autocomplete="off" (keyup.enter)="obtenerEnlaces()" />
+        <mat-icon matSuffix style="color:#7c839d;font-size:18px">router</mat-icon>
+      </mat-form-field>
+      <button mat-flat-button color="accent" (click)="obtenerEnlaces()"
+        [disabled]="!ipCentral || loadingEnlaces()" style="margin-top:4px;height:56px">
+        @if (loadingEnlaces()) {
+          <mat-spinner diameter="18" style="margin-right:8px"></mat-spinner>
+        } @else {
+          <mat-icon>cable</mat-icon>
+        }
+        Obtener enlaces
+      </button>
+    </div>
+
+    @if (enlacesObtenidos().length > 0) {
+      <div class="enlaces-obtenidos-list">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:.8rem;color:#7c839d;font-weight:500">
+            {{ enlacesObtenidos().length }} enlace(s) — se guardarán junto con la central
+          </span>
+        </div>
+        @for (enlace of enlacesObtenidos(); track enlace.nombre; let i = $index) {
+          <div class="enlace-obtenido-row">
+            @if (enlace.editando) {
+              <input class="enlace-edit-input" [value]="enlace.nombreEdit"
+                (input)="actualizarNombreEdit(i, $any($event.target).value)"
+                (keyup.enter)="confirmarEdicion(i)"
+                (keyup.escape)="cancelarEdicion(i)"
+                #editInput />
+              <button mat-icon-button (click)="confirmarEdicion(i)" title="Confirmar">
+                <mat-icon style="color:#4bd08b">check</mat-icon>
+              </button>
+              <button mat-icon-button (click)="cancelarEdicion(i)" title="Cancelar">
+                <mat-icon style="color:#7c839d">close</mat-icon>
+              </button>
+            } @else {
+              <mat-icon style="color:#7c839d;font-size:16px;width:16px;height:16px;margin-right:8px">link</mat-icon>
+              <span class="enlace-obtenido-nombre">{{ enlace.nombre }}</span>
+              <button mat-icon-button (click)="iniciarEdicion(i)" title="Renombrar">
+                <mat-icon style="color:#539bff;font-size:18px">edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="eliminarEnlaceObtenido(i)" title="Eliminar">
+                <mat-icon style="color:#fa896b;font-size:18px">delete_outline</mat-icon>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

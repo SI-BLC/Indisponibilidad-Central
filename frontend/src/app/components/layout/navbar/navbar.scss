@@ -1,0 +1,112 @@
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  height: 64px;
+  background: #131720 !important;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.04);
+}
+
+.menu-btn {
+  color: #7c839d !important;
+  &:hover { color: #e3e5ef !important; }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: rgba(83,155,255,.15);
+  border-radius: 8px;
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #539bff;
+  }
+}
+
+.brand-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e3e5ef;
+  letter-spacing: -.01em;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(75,208,139,.08);
+  border: 1px solid rgba(75,208,139,.2);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4bd08b;
+
+  .chip-dot {
+    width: 6px;
+    height: 6px;
+    background: #4bd08b;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  .user-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #7c839d;
+  }
+
+  .user-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #b0b7cc;
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.action-btn {
+  color: #7c839d !important;
+  &:hover { color: #e3e5ef !important; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
