@@ -1,6 +1,6 @@
 # Revisión de Lógica de Cálculo — Indisponibilidad Central
 
-## Estado: EN REVISIÓN
+## Estado: EN REVISIÓN 2
 
 ---
 
