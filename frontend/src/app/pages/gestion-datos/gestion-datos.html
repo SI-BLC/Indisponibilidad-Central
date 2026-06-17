@@ -1,7 +1,7 @@
 <div class="page-container">
   <div class="page-header">
     <div>
-      <h1 class="page-title">Gestión de Datos</h1>
+      <h1 class="page-title">Gestión de Grupos</h1>
       <p class="text-muted" style="margin:0;font-size:.875rem">Configuración de grupos por enlace</p>
     </div>
   </div>
@@ -119,8 +119,15 @@
             <th mat-header-cell *matHeaderCellDef>CALCULAR</th>
             <td mat-cell *matCellDef="let gc; let i = index">
               @if (editandoGrupoCentralIdx() === i) {
-                <input class="inline-input" type="number" [formControl]="formGrupoCentral.controls.calcular" />
-              } @else { {{ gc.calcular }} }
+                <mat-checkbox
+                  [checked]="formGrupoCentral.controls.calcular.value === 1"
+                  (change)="formGrupoCentral.controls.calcular.setValue($event.checked ? 1 : 0)">
+                </mat-checkbox>
+              } @else {
+                <mat-icon style="font-size:18px;height:18px;width:18px" [style.color]="gc.calcular ? '#4bd08b' : '#7c839d'">
+                  {{ gc.calcular ? 'check_circle' : 'cancel' }}
+                </mat-icon>
+              }
             </td>
           </ng-container>
 
@@ -236,8 +243,15 @@
           <th mat-header-cell *matHeaderCellDef>CALCULAR</th>
           <td mat-cell *matCellDef="let g">
             @if (editandoId() === g.id) {
-              <input class="inline-input" type="number" [formControl]="formEditar.controls.calcular" />
-            } @else { {{ g.calcular }} }
+              <mat-checkbox
+                [checked]="formEditar.controls.calcular.value === 1"
+                (change)="formEditar.controls.calcular.setValue($event.checked ? 1 : 0)">
+              </mat-checkbox>
+            } @else {
+              <mat-icon style="font-size:18px;height:18px;width:18px" [style.color]="g.calcular ? '#4bd08b' : '#7c839d'">
+                {{ g.calcular ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            }
           </td>
         </ng-container>
 
@@ -298,10 +312,12 @@
             <mat-label>Dirección</mat-label>
             <input matInput type="number" formControlName="direccion" />
           </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Calcular</mat-label>
-            <input matInput type="number" formControlName="calcular" />
-          </mat-form-field>
+          <div class="calcular-check">
+            <mat-checkbox formControlName="calcular" [checked]="formGrupo.controls.calcular.value === 1"
+              (change)="formGrupo.controls.calcular.setValue($event.checked ? 1 : 0)">
+              Calcular
+            </mat-checkbox>
+          </div>
           <button mat-flat-button color="primary" type="submit" [disabled]="formGrupo.invalid">
             <mat-icon>add</mat-icon> Agregar
           </button>

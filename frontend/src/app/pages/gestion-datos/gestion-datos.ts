@@ -10,6 +10,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ApiService } from '../../services/api';
 import { Central } from '../../models/central';
 import { Enlace, Grupo } from '../../models/enlace';
@@ -29,7 +30,7 @@ interface GrupoCentral {
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule,
-    MatSnackBarModule, MatProgressSpinnerModule,
+    MatSnackBarModule, MatProgressSpinnerModule, MatCheckboxModule,
   ],
   templateUrl: './gestion-datos.html',
   styleUrl: './gestion-datos.scss',

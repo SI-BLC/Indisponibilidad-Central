@@ -80,5 +80,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/calculos/calculos').then((m) => m.Calculos),
   },
+    {
+    path: 'carga-manual',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/carga-manual/carga-manual').then((m) => m.CargaManual),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];

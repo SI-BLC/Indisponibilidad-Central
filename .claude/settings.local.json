@@ -71,7 +71,21 @@
       "Bash(python3.11 << 'EOF'\nfrom database import SessionLocal\nfrom sqlalchemy import text\ndb = SessionLocal\\(\\)\n\ncentrales = db.execute\\(text\\(\"SELECT id, nemo, tipo FROM centrales WHERE nemo LIKE '%KOST%' OR nemo LIKE '%kost%'\"\\)\\).fetchall\\(\\)\nprint\\(\"Centrales KOSTEN:\", centrales\\)\n\n# Si no hay, buscar por todos\nif not centrales:\n    all_c = db.execute\\(text\\(\"SELECT id, nemo, tipo FROM centrales LIMIT 20\"\\)\\).fetchall\\(\\)\n    print\\(\"Todas:\", all_c\\)\ndb.close\\(\\)\nEOF)",
       "Bash(python3.11 << 'EOF'\nfrom database import SessionLocal\nfrom sqlalchemy import text\ndb = SessionLocal\\(\\)\n\n# Links for KOST \\(id=61, tipo=2\\)\nenlaces = db.execute\\(text\\(\"SELECT id, nemo, rol, idtipo FROM enlaces WHERE id_central=61\"\\)\\).fetchall\\(\\)\nfor e in enlaces:\n    print\\(\"Enlace:\", e\\)\n\ndb.close\\(\\)\nEOF)",
       "Bash(python3.11 << 'EOF'\nfrom database import SessionLocal\nfrom sqlalchemy import text\ndb = SessionLocal\\(\\)\n\n# Check columns in enlaces\ncols = db.execute\\(text\\(\"DESCRIBE enlaces\"\\)\\).fetchall\\(\\)\nprint\\(\"Columnas enlaces:\", [c[0] for c in cols]\\)\n\ndb.close\\(\\)\nEOF)",
-      "Bash(python3.11 << 'EOF'\nfrom database import SessionLocal\nfrom sqlalchemy import text\ndb = SessionLocal\\(\\)\n\n# Links for KOST \\(id=61, tipo=2\\)\nenlaces = db.execute\\(text\\(\"SELECT id, nombre, rol, idtipo FROM enlaces WHERE idcentral=61\"\\)\\).fetchall\\(\\)\nfor e in enlaces:\n    print\\(\"Enlace:\", e\\)\n\ndb.close\\(\\)\nEOF)"
+      "Bash(python3.11 << 'EOF'\nfrom database import SessionLocal\nfrom sqlalchemy import text\ndb = SessionLocal\\(\\)\n\n# Links for KOST \\(id=61, tipo=2\\)\nenlaces = db.execute\\(text\\(\"SELECT id, nombre, rol, idtipo FROM enlaces WHERE idcentral=61\"\\)\\).fetchall\\(\\)\nfor e in enlaces:\n    print\\(\"Enlace:\", e\\)\n\ndb.close\\(\\)\nEOF)",
+      "Bash(python3.11 << 'EOF'\nfrom database import SessionLocal\nfrom sqlalchemy import text\ndb = SessionLocal\\(\\)\ncols = db.execute\\(text\\(\"DESCRIBE configuracion\"\\)\\).fetchall\\(\\)\nprint\\(\"Columnas:\", [c[0] for c in cols]\\)\nrows = db.execute\\(text\\(\"SELECT * FROM configuracion LIMIT 5\"\\)\\).fetchall\\(\\)\nfor r in rows: print\\(r\\)\ndb.close\\(\\)\nEOF)",
+      "Bash(systemctl is-active:*)",
+      "Bash(systemctl show:*)",
+      "Bash(curl -s \"http://localhost:8000/resultados/detalle/23/2026-05-27\")",
+      "Bash(python3.11 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(p[''''intervalo_fin''''], p.get\\(''''gap_pct''''\\), p.get\\(''''tipo_periodo''''\\)\\) for p in d.get\\(''''periodos_dat'''',[]\\)]\")",
+      "Bash(python3.11 -c \"import json,sys; print\\(json.dumps\\(json.load\\(sys.stdin\\), indent=2, default=str\\)\\)\")",
+      "Bash(__NEW_LINE_84a7ad82363e7fd7__ mysql -u sotr -psotr indisponibilidad -e \":*)",
+      "Bash(__NEW_LINE_1908dd203a4d17e6__ echo:*)",
+      "Bash(__NEW_LINE_1908dd203a4d17e6__ mysql -u sotr -psotr indisponibilidad -e \":*)",
+      "mcp__claude_ai_Atlassian__getAccessibleAtlassianResources",
+      "mcp__claude_ai_Atlassian__getVisibleJiraProjects",
+      "mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql",
+      "mcp__claude_ai_Atlassian__getJiraIssue",
+      "Bash(ls -la /root/Indisponibilidad_Central/backend/services/__pycache__/reporte_service*.pyc)"
     ]
   }
 }

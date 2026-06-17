@@ -6,6 +6,8 @@ import { Enlace, EnlaceCreate, Grupo, GrupoCreate, GrupoUpdate, Mantenimiento, M
 import { ReporteOut, ReporteRequest } from '../models/reporte';
 import { ResultadoReporte, ResultadoCentral, DetalleCentral, CorteReporte, GuardarResultadosResponse, GuardarResultadosMesResponse } from '../models/resultado';
 import { ConItem, DatItem } from '../models/datos';
+import { CargaManualResult } from '../models/carga-manual';
+import { Comentario } from '../models/comentario';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -179,5 +181,37 @@ export class ApiService {
     if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
     if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);
     return this.http.get<DatItem[]>(`${this.base}/datos/dat`, { params });
+  }
+
+  // Carga Manual
+  analizarCargaManual(centralId: number, files: File[]): Observable<CargaManualResult> {
+    const fd = new FormData();
+    fd.append('central_id', String(centralId));
+    files.forEach(f => fd.append('files', f, f.name));
+    return this.http.post<CargaManualResult>(`${this.base}/carga-manual/analizar`, fd);
+  }
+
+  confirmarCargaManual(centralId: number, files: File[]): Observable<CargaManualResult> {
+    const fd = new FormData();
+    fd.append('central_id', String(centralId));
+    files.forEach(f => fd.append('files', f, f.name));
+    return this.http.post<CargaManualResult>(`${this.base}/carga-manual/confirmar`, fd);
+  }
+
+  // Comentarios
+  getComentario(idCentral: number, fecha: string): Observable<Comentario | null> {
+    return this.http.get<Comentario | null>(`${this.base}/comentarios/${idCentral}/${fecha}`);
+  }
+
+  crearComentario(idCentral: number, fecha: string, texto: string): Observable<Comentario> {
+    return this.http.post<Comentario>(`${this.base}/comentarios/${idCentral}/${fecha}`, { texto });
+  }
+
+  actualizarComentario(idCentral: number, fecha: string, texto: string): Observable<Comentario> {
+    return this.http.put<Comentario>(`${this.base}/comentarios/${idCentral}/${fecha}`, { texto });
+  }
+
+  eliminarComentario(idCentral: number, fecha: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/comentarios/${idCentral}/${fecha}`);
   }
 }

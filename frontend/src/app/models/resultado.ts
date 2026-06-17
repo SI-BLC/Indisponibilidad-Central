@@ -52,7 +52,7 @@ export interface DetalleCentral {
   ind_datos_seg?: number;
   inconsistencias: DetalleInconsistencia[];
   segments: DetalleSegmento[];
-  cortes_efectivos: { enlace: string; inicio: string; fin: string; dur_seg: number }[];
+  cortes_efectivos: { enlace: string; inicio: string; fin: string; dur_seg: number; bajo_tolerancia: boolean }[];
   periodos_dat: DetallePeriodoDat[];
   eventos_prim?: DetalleEnlaceEvento[];
   eventos_bck?: DetalleEnlaceEvento[];

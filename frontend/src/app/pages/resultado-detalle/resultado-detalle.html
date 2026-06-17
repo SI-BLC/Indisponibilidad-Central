@@ -178,7 +178,13 @@
                 </td>
                 <td class="mono">{{ horaCorta(c.inicio) }}</td>
                 <td class="mono">{{ horaCorta(c.fin) }}</td>
-                <td class="mono val-red">{{ segToHms(c.dur_seg) }} <span class="seg-note">({{ c.dur_seg | number:'1.0-0' }} seg)</span></td>
+                <td class="mono" [class.val-red]="!c.bajo_tolerancia" [class.val-muted]="c.bajo_tolerancia">
+                  {{ segToHms(c.dur_seg) }}
+                  <span class="seg-note">({{ c.dur_seg | number:'1.0-0' }} seg)</span>
+                  @if (c.bajo_tolerancia) {
+                    <span class="badge-tol" matTooltip="No computa: menor a tolerancia">no computa</span>
+                  }
+                </td>
               </tr>
             }
           </tbody>
@@ -230,6 +236,50 @@
         </div>
       </div>
     }
+
+    <!-- ──────────────── COMENTARIO ──────────────── -->
+    <div class="panel comentario-panel">
+      <div class="panel-title"><mat-icon>comment</mat-icon> Comentario</div>
+
+      @if (comentarioEdit()) {
+        <!-- Modo edición -->
+        <textarea class="comentario-textarea" [(ngModel)]="textoEdit" rows="4"
+          placeholder="Escribí tu análisis u observación sobre este resultado..."></textarea>
+        <div class="comentario-actions">
+          <button mat-flat-button color="primary" (click)="guardarComentario()"
+            [disabled]="savingComentario() || !textoEdit.trim()">
+            <mat-icon>save</mat-icon> Guardar
+          </button>
+          <button mat-button (click)="cancelarEdicion()">Cancelar</button>
+        </div>
+      } @else if (comentario(); as c) {
+        <!-- Comentario existente -->
+        <div class="comentario-texto">{{ c.texto }}</div>
+        <div class="comentario-meta">
+          <mat-icon class="meta-icon">person</mat-icon> {{ c.usuario }}
+          &nbsp;·&nbsp;
+          <mat-icon class="meta-icon">schedule</mat-icon> {{ c.updated_at | date:'dd/MM/yyyy HH:mm' }}
+        </div>
+        @if (c.usuario === currentUser) {
+          <div class="comentario-actions">
+            <button mat-icon-button matTooltip="Editar" (click)="iniciarEdicion()">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Eliminar" color="warn" (click)="eliminarComentario()">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        }
+      } @else {
+        <!-- Sin comentario -->
+        <div class="sin-comentario">
+          <span class="text-muted">Sin comentario para este resultado.</span>
+          <button mat-button color="primary" (click)="iniciarEdicion()">
+            <mat-icon>add</mat-icon> Agregar comentario
+          </button>
+        </div>
+      }
+    </div>
 
   }
 </div>

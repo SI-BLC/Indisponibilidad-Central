@@ -1,17 +1,20 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../services/api';
+import { AuthService } from '../../services/auth.service';
 import { DetalleCentral, DetalleSegmento } from '../../models/resultado';
+import { Comentario } from '../../models/comentario';
 
 @Component({
   selector: 'app-resultado-detalle',
   imports: [
-    CommonModule, DecimalPipe,
+    CommonModule, DecimalPipe, FormsModule,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
   ],
   templateUrl: './resultado-detalle.html',
@@ -19,6 +22,7 @@ import { DetalleCentral, DetalleSegmento } from '../../models/resultado';
 })
 export class ResultadoDetalle implements OnInit {
   private readonly api    = inject(ApiService);
+  private readonly auth   = inject(AuthService);
   private readonly route  = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -28,12 +32,20 @@ export class ResultadoDetalle implements OnInit {
   detalle   = signal<DetalleCentral | null>(null);
   error     = signal('');
 
+  comentario       = signal<Comentario | null>(null);
+  comentarioEdit   = signal(false);
+  textoEdit        = '';
+  savingComentario = signal(false);
+
+  get currentUser() { return this.auth.currentUser()?.username ?? ''; }
+
   readonly DIA_SEG = 86400;
 
   ngOnInit() {
     this.centralId = Number(this.route.snapshot.paramMap.get('centralId'));
     this.fecha     = this.route.snapshot.paramMap.get('fecha') ?? '';
     this.cargar();
+    this.cargarComentario();
   }
 
   cargar() {
@@ -42,6 +54,50 @@ export class ResultadoDetalle implements OnInit {
     this.api.getDetalleCentral(this.centralId, this.fecha).subscribe({
       next: (d) => { this.detalle.set(d); this.loading.set(false); },
       error: () => { this.error.set('No se pudo cargar el detalle.'); this.loading.set(false); },
+    });
+  }
+
+  // ── Comentario ────────────────────────────────────────────────────────────
+
+  cargarComentario() {
+    this.api.getComentario(this.centralId, this.fecha).subscribe({
+      next: (c) => this.comentario.set(c),
+      error: () => {},
+    });
+  }
+
+  iniciarEdicion() {
+    this.textoEdit = this.comentario()?.texto ?? '';
+    this.comentarioEdit.set(true);
+  }
+
+  cancelarEdicion() {
+    this.comentarioEdit.set(false);
+  }
+
+  guardarComentario() {
+    const texto = this.textoEdit.trim();
+    if (!texto) return;
+    this.savingComentario.set(true);
+    const existe = !!this.comentario();
+    const op = existe
+      ? this.api.actualizarComentario(this.centralId, this.fecha, texto)
+      : this.api.crearComentario(this.centralId, this.fecha, texto);
+    op.subscribe({
+      next: (c) => {
+        this.comentario.set(c);
+        this.comentarioEdit.set(false);
+        this.savingComentario.set(false);
+      },
+      error: () => this.savingComentario.set(false),
+    });
+  }
+
+  eliminarComentario() {
+    if (!confirm('¿Eliminar el comentario?')) return;
+    this.api.eliminarComentario(this.centralId, this.fecha).subscribe({
+      next: () => this.comentario.set(null),
+      error: () => {},
     });
   }
 

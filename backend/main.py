@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from jose import JWTError, jwt
-from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos
+from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios
 from routers import auth
 from config import settings
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -48,6 +48,26 @@ async def lifespan(app: FastAPI):
     _db2 = SessionLocal()
     try:
         _db2.execute(_text("""
+            CREATE TABLE IF NOT EXISTS comentarios (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                id_central INT NOT NULL,
+                fecha      DATE NOT NULL,
+                texto      TEXT NOT NULL,
+                usuario    VARCHAR(100) NOT NULL,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL,
+                UNIQUE KEY uq_central_fecha (id_central, fecha)
+            )
+        """))
+        _db2.commit()
+    except Exception:
+        pass
+    finally:
+        _db2.close()
+
+    _db3 = SessionLocal()
+    try:
+        _db3.execute(_text("""
             CREATE TABLE IF NOT EXISTS cortes_reporte (
                 id         INT AUTO_INCREMENT PRIMARY KEY,
                 id_enlace  INT NOT NULL,
@@ -61,11 +81,11 @@ async def lifespan(app: FastAPI):
                 INDEX idx_enlace_fecha (id_enlace, fecha)
             )
         """))
-        _db2.commit()
+        _db3.commit()
     except Exception:
         pass
     finally:
-        _db2.close()
+        _db3.close()
 
     scheduler.add_job(
         _job_guardar_resultados,
@@ -122,6 +142,8 @@ app.include_router(reportes.router)
 app.include_router(dashboard.router)
 app.include_router(resultados.router)
 app.include_router(datos.router)
+app.include_router(carga_manual.router)
+app.include_router(comentarios.router)
 
 
 @app.get("/health")

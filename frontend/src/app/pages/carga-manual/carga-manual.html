@@ -1,0 +1,180 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Carga Manual</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Carga de archivos CON y DAT recuperados de SOTR</p>
+    </div>
+  </div>
+
+  <!-- PASO 1: Central -->
+  <div class="step-card">
+    <div class="step-header">
+      <div class="step-number">1</div>
+      <div class="step-info">
+        <div class="step-title">Seleccionar central</div>
+        <div class="step-sub">Elegí la central a la que pertenecen los archivos</div>
+      </div>
+      @if (centralControl.value) {
+        <mat-icon class="step-ok">check_circle</mat-icon>
+      }
+    </div>
+    <div class="step-body">
+      <mat-form-field appearance="outline" style="width:280px">
+        <mat-label>Central</mat-label>
+        <mat-select [formControl]="centralControl">
+          @for (c of centrales(); track c.id) {
+            <mat-option [value]="c.id">{{ c.nemo }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- PASO 2: Archivos -->
+  <div class="step-card" [class.step-disabled]="!centralControl.value">
+    <div class="step-header">
+      <div class="step-number">2</div>
+      <div class="step-info">
+        <div class="step-title">Seleccionar archivos</div>
+        <div class="step-sub">Podés subir varios archivos .con y .dat a la vez</div>
+      </div>
+      @if (archivosSeleccionados().length > 0) {
+        <mat-icon class="step-ok">check_circle</mat-icon>
+      }
+    </div>
+    <div class="step-body">
+      <div class="upload-zone" (click)="centralControl.value && fileInput.click()">
+        <mat-icon class="upload-icon">cloud_upload</mat-icon>
+        <span class="upload-text">Clic para seleccionar archivos</span>
+        <span class="upload-hint">.con y .dat</span>
+        <input #fileInput type="file" multiple accept=".con,.dat" style="display:none"
+               (change)="onFilesSelected($event)" />
+      </div>
+
+      @if (archivosSeleccionados().length > 0) {
+        <div class="archivos-list">
+          @for (f of archivosSeleccionados(); track f.name; let i = $index) {
+            <div class="archivo-item" [class.item-con]="f.name.endsWith('.con')" [class.item-dat]="f.name.endsWith('.dat')">
+              <mat-icon>{{ f.name.endsWith('.con') ? 'cable' : 'table_chart' }}</mat-icon>
+              <span class="archivo-nombre">{{ f.name }}</span>
+              <span class="archivo-tipo">{{ f.name.endsWith('.con') ? 'CON' : 'DAT' }}</span>
+              <button class="remove-btn" (click)="removeFile(i)" title="Quitar">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- PASO 3: Analizar -->
+  <div class="step-card" [class.step-disabled]="!puedeAnalizar">
+    <div class="step-header">
+      <div class="step-number">3</div>
+      <div class="step-info">
+        <div class="step-title">Analizar</div>
+        <div class="step-sub">Verificá duplicados y enlaces antes de cargar</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <button mat-flat-button color="primary"
+              [disabled]="!puedeAnalizar || cargando()"
+              (click)="analizar()">
+        @if (cargando() && !confirmado()) {
+          <mat-spinner diameter="18" style="display:inline-block;margin-right:8px;vertical-align:middle"></mat-spinner>
+        } @else {
+          <mat-icon>manage_search</mat-icon>
+        }
+        Analizar archivos
+      </button>
+    </div>
+  </div>
+
+  <!-- RESULTADO DEL ANÁLISIS -->
+  @if (resultado(); as res) {
+    <div class="result-section">
+
+      <!-- Banner estado -->
+      <div class="result-banner" [class.banner-ok]="confirmado()" [class.banner-preview]="!confirmado()">
+        <mat-icon>{{ confirmado() ? 'check_circle' : 'preview' }}</mat-icon>
+        <span>{{ confirmado() ? 'Carga completada exitosamente' : 'Resultado del análisis — revisá el detalle antes de confirmar' }}</span>
+      </div>
+
+      <!-- Tarjetas de resumen -->
+      <div class="resumen-grid">
+        <div class="resumen-card ok">
+          <mat-icon>storage</mat-icon>
+          <div class="resumen-value">{{ res.resumen.con_a_insertar }}</div>
+          <div class="resumen-label">Filas CON {{ confirmado() ? 'insertadas' : 'a insertar' }}</div>
+        </div>
+        <div class="resumen-card ok">
+          <mat-icon>table_chart</mat-icon>
+          <div class="resumen-value">{{ res.resumen.dat_a_insertar }}</div>
+          <div class="resumen-label">Filas DAT {{ confirmado() ? 'insertadas' : 'a insertar' }}</div>
+        </div>
+        @if (res.resumen.con_duplicados > 0 || res.resumen.dat_duplicados > 0) {
+          <div class="resumen-card warn">
+            <mat-icon>content_copy</mat-icon>
+            <div class="resumen-value">{{ res.resumen.con_duplicados + res.resumen.dat_duplicados }}</div>
+            <div class="resumen-label">Duplicados omitidos</div>
+          </div>
+        }
+      </div>
+
+      <!-- Log por archivo -->
+      <div class="logs-section">
+        <div class="logs-title">Detalle por archivo</div>
+        @for (arch of res.archivos; track arch.nombre) {
+          <div class="archivo-log">
+            <div class="archivo-log-header">
+              <mat-icon [class.icon-con]="arch.tipo==='con'" [class.icon-dat]="arch.tipo==='dat'">
+                {{ arch.tipo === 'con' ? 'cable' : 'table_chart' }}
+              </mat-icon>
+              <span class="archivo-nombre">{{ arch.nombre }}</span>
+              <span class="badge badge-ok">{{ arch.a_insertar }} {{ confirmado() ? 'insertadas' : 'a insertar' }}</span>
+              @if (arch.duplicados > 0) {
+                <span class="badge badge-warn">{{ arch.duplicados }} duplicados</span>
+              }
+            </div>
+            @if (arch.log.length > 0) {
+              <div class="log-lines">
+                @for (line of arch.log; track $index) {
+                  <div class="log-line">
+                    <mat-icon class="log-icon">info_outline</mat-icon>
+                    {{ line }}
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="log-empty">
+                <mat-icon>check</mat-icon> Sin advertencias
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Acción confirmar -->
+      @if (!confirmado()) {
+        <div class="confirm-actions">
+          @if (puedeConfirmar) {
+            <button mat-flat-button color="accent" [disabled]="cargando()" (click)="confirmar()">
+              @if (cargando()) {
+                <mat-spinner diameter="18" style="display:inline-block;margin-right:8px;vertical-align:middle"></mat-spinner>
+              } @else {
+                <mat-icon>cloud_upload</mat-icon>
+              }
+              Confirmar carga en base de datos
+            </button>
+          } @else {
+            <div class="no-data-msg">
+              <mat-icon>info</mat-icon>
+              No hay filas nuevas para insertar.
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

@@ -139,6 +139,14 @@
 .val-orange { color: #f8c076; }
 .seg-note    { color: #7c839d; font-size: .75em; }
 .enlace-cell       { color: #a0a8c0; font-weight: 600; letter-spacing: .02em; }
+.val-muted         { color: #7c839d; }
+.badge-tol {
+  display: inline-block; margin-left: 8px;
+  padding: 1px 7px; border-radius: 10px;
+  font-size: .7rem; font-weight: 700;
+  background: rgba(124,131,157,.15); color: #7c839d;
+  letter-spacing: .03em; vertical-align: middle;
+}
 .sin-cobertura-cell { color: #ff6b6b; font-weight: 700; }
 .row-sin-cobertura  { background: rgba(255,107,107,.06); border-top: 1px solid rgba(255,107,107,.2); }
 
@@ -163,3 +171,29 @@
   padding: 60px 20px; color: #7c839d;
   mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: .3; }
 }
+
+// ── Comentario ──────────────────────────────────────────────────────────────
+.comentario-panel { margin-top: 16px; }
+
+.comentario-textarea {
+  width: 100%; box-sizing: border-box; padding: 10px 12px;
+  border: 1px solid #3a4156; border-radius: 6px;
+  background: #1a2035; color: #d0d5e8;
+  font-size: .9rem; font-family: inherit; resize: vertical; outline: none;
+  &:focus { border-color: #539bff; }
+}
+
+.comentario-texto {
+  white-space: pre-wrap; color: #d0d5e8;
+  font-size: .9rem; line-height: 1.6; padding: 4px 0 12px;
+}
+
+.comentario-meta {
+  display: flex; align-items: center; gap: 4px;
+  font-size: .78rem; color: #7c839d;
+  .meta-icon { font-size: 14px; width: 14px; height: 14px; }
+}
+
+.comentario-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+
+.sin-comentario { display: flex; align-items: center; gap: 16px; padding: 4px 0; }

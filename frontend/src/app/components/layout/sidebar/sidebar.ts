@@ -24,9 +24,10 @@ export class Sidebar {
     { label: 'Editar Central', icon: 'edit', route: '/editar-central' },
     { label: 'Reportes', icon: 'bar_chart', route: '/reportes' },
     { label: 'Mantenimientos', icon: 'build', route: '/mantenimientos' },
-    { label: 'Gestión de Datos', icon: 'storage', route: '/gestion-datos' },
+    { label: 'Gestión de Grupos', icon: 'storage', route: '/gestion-datos' },
     { label: 'Resultados', icon: 'assessment', route: '/resultados' },
     { label: 'Datos', icon: 'table_view', route: '/datos' },
     { label: 'Cálculos', icon: 'calculate', route: '/calculos' },
+    { label: 'Carga Manual', icon: 'upload', route: '/carga-manual' },
   ];
 }

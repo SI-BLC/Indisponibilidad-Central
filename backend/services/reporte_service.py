@@ -95,6 +95,7 @@ _PESO_POR_TIPO: dict[int, float] = {
 # Si la tabla `grupos` tiene tipo=0 para alguno de estos grupos, se usa este default.
 _TIPO_DEFAULT_POR_GRUPO: dict[int, int] = {
     1: 1,
+    2: 3,
     3: 3,
     5: 5,
     71: 7,
@@ -887,18 +888,21 @@ def _armar_informe_pd(id_enlace: int, ini: datetime, fin: datetime,
 # ─── Procesador principal (sin tablas temporales) ────────────────────────────
 
 def _excluir_periodos_con_corte(df_dat: pd.DataFrame, df_cortes: pd.DataFrame) -> pd.DataFrame:
-    """Excluye registros .dat cuyo período 30-min se solapa con algún corte.
-
-    Alinea el comportamiento al VB6: la sección de calidad de datos solo evalúa
-    períodos donde el enlace estuvo disponible durante los 30 minutos completos.
-    Los períodos parcialmente afectados por un corte ya están cubiertos por la
-    sección de cortes, evitando doble conteo.
+    """Excluye registros .dat cuyo período 30-min se solapa con algún corte de duración > 0.
+    Comportamiento VB6 original: cualquier corte con ind_bruta > 0 excluye el período.
+    Un corte de 0 segundos (p.ej. i+ exactamente al fin del día) no excluye ningún período.
+    La tolerancia solo aplica al cómputo de ind_total (corte_ef_seg_neto).
     """
     if df_cortes.empty or df_dat.empty:
         return df_dat
 
-    cortes_ini = pd.to_datetime(df_cortes["inicio"])
-    cortes_fin = pd.to_datetime(df_cortes["fin"])
+    # Ignorar cortes de duración 0 (inicio == fin)
+    df_ef = df_cortes[df_cortes["ind_bruta"] > 0] if "ind_bruta" in df_cortes.columns else df_cortes
+    if df_ef.empty:
+        return df_dat
+
+    cortes_ini = pd.to_datetime(df_ef["inicio"])
+    cortes_fin = pd.to_datetime(df_ef["fin"])
 
     def periodo_limpio(fecha: pd.Timestamp) -> bool:
         p_ini = fecha - pd.Timedelta(minutes=30)
@@ -1340,13 +1344,20 @@ def _calcular_corte_efectivo_redundantes(ini: datetime, fin: datetime, db: Sessi
 def _estado_inicial_enlace(id_enlace: int, col: str, ini: datetime, db: Session) -> bool:
     """True si el enlace estaba UP justo antes de ini.
     Busca el último evento significativo (e+/i+), ignorando valores intermedios
-    del mismo batch (e, i, u, etc.) que no representan el estado final del enlace."""
+    del mismo batch (e, i, u, etc.) que no representan el estado final del enlace.
+    Si no hay historial en con, usa dat: si el enlace transmitió datos (t>0) ese día → UP,
+    si no transmitió nada → DOWN (enlace inactivo)."""
     last = db.execute(
         text(f"SELECT {col} FROM con WHERE id_enlace=:e AND {col} IN ('i+','e+') AND fecha<:ini ORDER BY fecha DESC LIMIT 1"),
         {"e": id_enlace, "ini": ini}
     ).scalar()
     if last is None:
-        return True  # sin historial → asumir UP
+        fin = ini + timedelta(days=1)
+        total_t = db.execute(
+            text("SELECT COALESCE(SUM(t), 0) FROM dat WHERE id_enlace=:e AND fecha>=:ini AND fecha<:fin"),
+            {"e": id_enlace, "ini": ini, "fin": fin}
+        ).scalar() or 0
+        return total_t > 0
     return last == "e+"
 
 
@@ -1487,9 +1498,14 @@ def _calcular_tipo2(
 
     Retorna (ind_total_seg, tiene_inconsistencia).
     """
-    segments, _, inconsistencias, corte_ef_seg = _construir_timeline_tipo2(
+    tol_c = int(db.execute(text("SELECT tol_cortes FROM configuracion LIMIT 1")).scalar() or 120)
+
+    segments, cortes_ef, inconsistencias, _ = _construir_timeline_tipo2(
         id_prim, id_bck, ini, fin, db
     )
+
+    # Corte efectivo neto: aplica tolerancia a cada gap individual
+    corte_ef_seg_neto = sum(max(0.0, c["dur_seg"] - tol_c) for c in cortes_ef)
 
     prim_active = sum(s["dur_seg"] for s in segments if s["estado"] == "prim")
     bck_active  = sum(s["dur_seg"] for s in segments if s["estado"] == "bck")
@@ -1508,7 +1524,7 @@ def _calcular_tipo2(
     ind_datos_bck  = float(valores_bck.get("ind_datos_norm",  0.0)) if valores_bck  else 0.0
 
     ind_datos_seg = ind_datos_prim * prim_frac + ind_datos_bck * bck_frac
-    ind_total_seg = corte_ef_seg + ind_datos_seg
+    ind_total_seg = corte_ef_seg_neto + ind_datos_seg
 
     return ind_total_seg, len(inconsistencias) > 0
 
@@ -1600,6 +1616,8 @@ def _detalle_central(
         return {}
     c_id, nemo, tipo = row
 
+    tol_c = int(db.execute(text("SELECT tol_cortes FROM configuracion LIMIT 1")).scalar() or 120)
+
     def _eventos_enlace(id_e: int) -> list[dict]:
         prefix = "a" if _es_directo(id_e, db) else "b"
         col = f"asoc_{prefix}b"
@@ -1665,7 +1683,9 @@ def _detalle_central(
             text("SELECT nombre FROM enlaces WHERE id=:id"), {"id": id_e}
         ).scalar() or str(id_e)
         cortes = [
-            {"enlace": nombre_e, "inicio": s["inicio"], "fin": s["fin"], "dur_seg": s["dur_seg"]}
+            {"enlace": nombre_e, "inicio": s["inicio"], "fin": s["fin"],
+             "dur_seg": s["dur_seg"],
+             "bajo_tolerancia": s["dur_seg"] < tol_c}
             for s in segs if s["estado"] == "down"
         ]
 
@@ -1723,15 +1743,19 @@ def _detalle_central(
             result.append(cur)
         return result
 
+    def _con_tol(c: dict) -> dict:
+        return {**c, "bajo_tolerancia": c["dur_seg"] < tol_c}
+
     cortes_individuales = sorted(
-        _merge_link_cortes(nombre_prim, {"bck", "ninguno"}) +
-        _merge_link_cortes(nombre_bck,  {"prim", "ninguno"}),
+        [_con_tol(c) for c in _merge_link_cortes(nombre_prim, {"bck", "ninguno"})] +
+        [_con_tol(c) for c in _merge_link_cortes(nombre_bck,  {"prim", "ninguno"})],
         key=lambda x: x["inicio"]
     )
     cortes_efectivos_merged = [
         {"enlace": "Sin cobertura",
          "inicio": c["inicio"].isoformat(), "fin": c["fin"].isoformat(),
-         "dur_seg": c["dur_seg"]}
+         "dur_seg": c["dur_seg"],
+         "bajo_tolerancia": c["dur_seg"] < tol_c}
         for c in cortes_ef
     ]
     cortes_out = cortes_individuales + cortes_efectivos_merged
@@ -1739,6 +1763,9 @@ def _detalle_central(
         {**inc, "t1": inc["t1"].isoformat(), "t2": inc["t2"].isoformat()}
         for inc in inconsistencias
     ]
+
+    # Corte efectivo neto (con tolerancia aplicada)
+    corte_ef_seg_neto = sum(max(0.0, c["dur_seg"] - tol_c) for c in cortes_ef)
 
     # ind_datos proporcional
     prim_active = sum(s["dur_seg"] for s in segments if s["estado"] == "prim")
@@ -1752,12 +1779,14 @@ def _detalle_central(
     ind_datos_prim = float(valores_prim.get("ind_datos_norm", 0.0)) if valores_prim else 0.0
     ind_datos_bck  = float(valores_bck.get("ind_datos_norm",  0.0)) if valores_bck  else 0.0
     ind_datos_seg  = ind_datos_prim * prim_frac + ind_datos_bck * bck_frac
-    ind_total_seg  = corte_ef_seg + ind_datos_seg
+    ind_total_seg  = corte_ef_seg_neto + ind_datos_seg
 
     # Construir tabla de períodos 30-min
     dat_prim = _periodos_dat_enlace(id_prim)
     dat_bck  = _periodos_dat_enlace(id_bck)
     all_fechas = sorted(set(dat_prim.keys()) | set(dat_bck.keys()))
+
+    period_sec = 1800.0  # 30 minutos
 
     periodos_lista = []
     for k in all_fechas:
@@ -1777,9 +1806,10 @@ def _detalle_central(
                       "ui_norec", "ui_noval"):
             combined[campo] = prim_w.get(campo, 0.0) + bck_w.get(campo, 0.0)
 
+        # Cualquier gap (ambos enlaces caídos) excluye el período, como hace el VB6.
+        # La tolerancia solo afecta ind_total, no la calidad de datos.
         tipo_periodo = (
-            "excluido"     if frac_gap >= 1.0 else
-            "proporcional" if 0 < frac_gap < 1.0 else
+            "excluido" if frac_gap > 0 else
             "normal"
         )
 
@@ -1795,7 +1825,7 @@ def _detalle_central(
     return {
         "central": nemo, "tipo": tipo,
         "ind_total_seg": ind_total_seg,
-        "corte_efectivo_seg": corte_ef_seg,
+        "corte_efectivo_seg": corte_ef_seg_neto,
         "ind_datos_seg": ind_datos_seg,
         "inconsistencias": inconsistencias_out,
         "segments": segments_out,
