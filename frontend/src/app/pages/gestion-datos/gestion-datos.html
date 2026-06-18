@@ -1,8 +1,8 @@
 <div class="page-container">
   <div class="page-header">
     <div>
-      <h1 class="page-title">Gestión de Grupos</h1>
-      <p class="text-muted" style="margin:0;font-size:.875rem">Configuración de grupos por enlace</p>
+      <h1 class="page-title">{{ esIccp ? 'Gestión de TransferSets' : 'Gestión de Grupos' }}</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">{{ esIccp ? 'Configuración de TransferSets por enlace (ICCP)' : 'Configuración de grupos por enlace' }}</p>
     </div>
   </div>
 
@@ -28,8 +28,8 @@
     </div>
   </div>
 
-  <!-- Panel: grupos obtenidos desde la central -->
-  @if (form.value.idEnlace && centralSeleccionada()?.ip1) {
+  <!-- ═══════════════ ELCOM: Grupos ═══════════════ -->
+  @if (!esIccp && form.value.idEnlace && centralSeleccionada()?.ip1) {
     <div class="central-panel">
       <div class="central-panel-header">
         <div class="panel-title" style="margin:0"><mat-icon>router</mat-icon> Grupos de la central</div>
@@ -177,8 +177,8 @@
     </div>
   }
 
-  <!-- Panel: grupos en DB -->
-  @if (form.value.idEnlace) {
+  <!-- Panel: grupos en DB (ELCOM) -->
+  @if (!esIccp && form.value.idEnlace) {
     <div class="table-panel">
       <div class="table-header">
         <span class="section-title" style="margin:0">Grupos configurados</span>
@@ -319,6 +319,119 @@
             </mat-checkbox>
           </div>
           <button mat-flat-button color="primary" type="submit" [disabled]="formGrupo.invalid">
+            <mat-icon>add</mat-icon> Agregar
+          </button>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════ ICCP: TransferSets ═══════════════ -->
+  @if (esIccp && form.value.idEnlace) {
+    <div class="table-panel">
+      <div class="table-header">
+        <span class="section-title" style="margin:0">TransferSets configurados</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="badge badge-primary">{{ transferSets().length }} TS</span>
+          @if (transferSets().length === 0) {
+            <button mat-stroked-button (click)="crearTsDefaults()"
+              style="font-size:.78rem;font-weight:700;border-color:rgba(75,208,139,.35);color:#4bd08b;border-radius:8px!important;height:32px;line-height:32px">
+              <mat-icon style="font-size:16px;width:16px;height:16px">add_circle</mat-icon>
+              Crear por defecto
+            </button>
+          }
+        </div>
+      </div>
+
+      <table mat-table [dataSource]="transferSets()">
+        <ng-container matColumnDef="ts_nombre">
+          <th mat-header-cell *matHeaderCellDef>TRANSFERSET</th>
+          <td mat-cell *matCellDef="let ts">
+            @if (editandoTsId() === ts.id) {
+              <input class="inline-input" [formControl]="formTsEditar.controls.ts_nombre" />
+            } @else {
+              <span class="badge badge-primary">{{ ts.ts_nombre }}</span>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>TIPO</th>
+          <td mat-cell *matCellDef="let ts">
+            @if (editandoTsId() === ts.id) {
+              <input class="inline-input" type="number" [formControl]="formTsEditar.controls.tipo" />
+            } @else { {{ ts.tipo }} }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="calcular">
+          <th mat-header-cell *matHeaderCellDef>CALCULAR</th>
+          <td mat-cell *matCellDef="let ts">
+            @if (editandoTsId() === ts.id) {
+              <mat-checkbox
+                [checked]="formTsEditar.controls.calcular.value === 1"
+                (change)="formTsEditar.controls.calcular.setValue($event.checked ? 1 : 0)">
+              </mat-checkbox>
+            } @else {
+              <mat-icon style="font-size:18px;height:18px;width:18px" [style.color]="ts.calcular ? '#4bd08b' : '#7c839d'">
+                {{ ts.calcular ? 'check_circle' : 'cancel' }}
+              </mat-icon>
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let ts" class="actions-cell">
+            @if (editandoTsId() === ts.id) {
+              <button mat-icon-button class="save-btn" matTooltip="Guardar"
+                      [disabled]="formTsEditar.invalid" (click)="guardarEdicionTs(ts.id)">
+                <mat-icon>check</mat-icon>
+              </button>
+              <button mat-icon-button class="cancel-btn" matTooltip="Cancelar" (click)="cancelarEdicionTs()">
+                <mat-icon>close</mat-icon>
+              </button>
+            } @else {
+              <button mat-icon-button class="edit-btn" matTooltip="Editar" (click)="editarTs(ts)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="eliminarTs(ts.id)">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="tsColumns"></tr>
+        <tr mat-row *matRowDef="let r; columns: tsColumns;"
+            [class.editing-row]="editandoTsId() === r.id"></tr>
+      </table>
+
+      @if (transferSets().length === 0) {
+        <div class="table-empty">
+          <mat-icon>layers_clear</mat-icon>
+          <span>Sin TransferSets configurados para este enlace</span>
+        </div>
+      }
+
+      <div class="add-grupo-form">
+        <div class="add-grupo-title"><mat-icon>add_circle_outline</mat-icon> Agregar TransferSet</div>
+        <form [formGroup]="formTs" (ngSubmit)="agregarTs()" class="add-row">
+          <mat-form-field appearance="outline" style="flex:2">
+            <mat-label>Nombre TS</mat-label>
+            <input matInput formControlName="ts_nombre" placeholder="Ej: TS_DOM_00003" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo</mat-label>
+            <input matInput type="number" formControlName="tipo" />
+          </mat-form-field>
+          <div class="calcular-check">
+            <mat-checkbox formControlName="calcular" [checked]="formTs.controls.calcular.value === 1"
+              (change)="formTs.controls.calcular.setValue($event.checked ? 1 : 0)">
+              Calcular
+            </mat-checkbox>
+          </div>
+          <button mat-flat-button color="primary" type="submit" [disabled]="formTs.invalid">
             <mat-icon>add</mat-icon> Agregar
           </button>
         </form>

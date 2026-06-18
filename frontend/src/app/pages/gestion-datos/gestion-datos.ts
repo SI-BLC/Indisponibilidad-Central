@@ -13,7 +13,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ApiService } from '../../services/api';
 import { Central } from '../../models/central';
-import { Enlace, Grupo } from '../../models/enlace';
+import { Enlace, Grupo, TransferSet } from '../../models/enlace';
 
 interface GrupoCentral {
   grupo: number;
@@ -51,8 +51,15 @@ export class GestionDatos implements OnInit {
   loadingGruposCentral = signal(false);
   editandoGrupoCentralIdx = signal<number | null>(null);
 
+  // ICCP TransferSets
+  transferSets = signal<TransferSet[]>([]);
+  editandoTsId = signal<number | null>(null);
+
+  get esIccp() { return this.centralSeleccionada()?.protocolo === 'iccp'; }
+
   readonly grupoColumns = ['id', 'grupo', 'tipo', 'periodico', 'periodo', 'direccion', 'calcular', 'acciones'];
   readonly gcColumns = ['grupo', 'tipo', 'periodico', 'periodo', 'direccion', 'calcular', 'estado', 'acciones'];
+  readonly tsColumns = ['ts_nombre', 'tipo', 'calcular', 'acciones'];
 
   form = this.fb.group({
     idCentral: [null as number | null, Validators.required],
@@ -86,6 +93,19 @@ export class GestionDatos implements OnInit {
     calcular: [1],
   });
 
+  // ICCP TransferSet forms
+  formTs = this.fb.group({
+    ts_nombre: ['', Validators.required],
+    tipo:      [0],
+    calcular:  [1],
+  });
+
+  formTsEditar = this.fb.group({
+    ts_nombre: ['', Validators.required],
+    tipo:      [0],
+    calcular:  [1],
+  });
+
   get nuevosGruposCount() { return this.gruposCentral().filter(g => g.esNuevo).length; }
 
   ngOnInit() {
@@ -107,8 +127,13 @@ export class GestionDatos implements OnInit {
     this.editandoId.set(null);
     this.gruposCentral.set([]);
     this.editandoGrupoCentralIdx.set(null);
+    this.editandoTsId.set(null);
     this.enlaceSeleccionado.set(this.enlaces().find(e => e.id === id) ?? null);
-    this.api.getGrupos(id).subscribe({ next: (g) => this.grupos.set(g) });
+    if (this.esIccp) {
+      this.api.getTransferSets(id).subscribe({ next: (ts) => this.transferSets.set(ts) });
+    } else {
+      this.api.getGrupos(id).subscribe({ next: (g) => this.grupos.set(g) });
+    }
   }
 
   // ─── Obtener grupos desde la central ────────────────────────────────────────
@@ -340,6 +365,66 @@ export class GestionDatos implements OnInit {
   eliminarGrupo(id: number) {
     this.api.eliminarGrupo(id).subscribe({
       next: () => this.grupos.update((list) => list.filter((g) => g.id !== id)),
+    });
+  }
+
+  // ─── ICCP TransferSets ────────────────────────────────────────────────────────
+
+  crearTsDefaults() {
+    const idEnlace = this.form.value.idEnlace;
+    if (!idEnlace) return;
+    this.api.crearTransferSetsDefaults(idEnlace).subscribe({
+      next: (created) => {
+        this.transferSets.update(list => [...list, ...created]);
+        this.snack.open(`${created.length} TransferSet(s) creados`, 'OK', { duration: 2500 });
+      },
+      error: () => this.snack.open('Error al crear TransferSets', 'OK', { duration: 3000 }),
+    });
+  }
+
+  agregarTs() {
+    const idEnlace = this.form.value.idEnlace;
+    if (!idEnlace || this.formTs.invalid) return;
+    const v = this.formTs.value;
+    this.api.crearTransferSet({
+      id_enlace: idEnlace,
+      ts_nombre: v.ts_nombre!,
+      tipo: v.tipo ?? 0,
+      calcular: v.calcular ?? 1,
+    }).subscribe({
+      next: (ts) => {
+        this.transferSets.update(list => [...list, ts]);
+        this.formTs.reset({ tipo: 0, calcular: 1 });
+      },
+      error: (e) => this.snack.open(e.error?.detail ?? 'Error al crear TransferSet', 'OK', { duration: 3000 }),
+    });
+  }
+
+  editarTs(ts: TransferSet) {
+    this.editandoTsId.set(ts.id);
+    this.formTsEditar.setValue({ ts_nombre: ts.ts_nombre, tipo: ts.tipo, calcular: ts.calcular });
+  }
+
+  cancelarEdicionTs() { this.editandoTsId.set(null); }
+
+  guardarEdicionTs(id: number) {
+    if (this.formTsEditar.invalid) return;
+    const v = this.formTsEditar.value;
+    this.api.actualizarTransferSet(id, {
+      ts_nombre: v.ts_nombre!,
+      tipo: v.tipo ?? 0,
+      calcular: v.calcular ?? 1,
+    }).subscribe({
+      next: (updated) => {
+        this.transferSets.update(list => list.map(t => t.id === id ? updated : t));
+        this.editandoTsId.set(null);
+      },
+    });
+  }
+
+  eliminarTs(id: number) {
+    this.api.eliminarTransferSet(id).subscribe({
+      next: () => this.transferSets.update(list => list.filter(t => t.id !== id)),
     });
   }
 }

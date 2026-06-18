@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Central, CentralCreate, DashboardCentral } from '../models/central';
-import { Enlace, EnlaceCreate, Grupo, GrupoCreate, GrupoUpdate, Mantenimiento, MantenimientoCreate } from '../models/enlace';
+import { Enlace, EnlaceCreate, Grupo, GrupoCreate, GrupoUpdate, TransferSet, TransferSetCreate, TransferSetUpdate, Mantenimiento, MantenimientoCreate } from '../models/enlace';
 import { ReporteOut, ReporteRequest } from '../models/reporte';
 import { ResultadoReporte, ResultadoCentral, DetalleCentral, CorteReporte, GuardarResultadosResponse, GuardarResultadosMesResponse } from '../models/resultado';
 import { ConItem, DatItem } from '../models/datos';
@@ -196,6 +196,27 @@ export class ApiService {
     fd.append('central_id', String(centralId));
     files.forEach(f => fd.append('files', f, f.name));
     return this.http.post<CargaManualResult>(`${this.base}/carga-manual/confirmar`, fd);
+  }
+
+  // TransferSets (ICCP)
+  getTransferSets(idEnlace: number): Observable<TransferSet[]> {
+    return this.http.get<TransferSet[]>(`${this.base}/transfersets`, { params: { id_enlace: idEnlace } });
+  }
+
+  crearTransferSet(data: TransferSetCreate): Observable<TransferSet> {
+    return this.http.post<TransferSet>(`${this.base}/transfersets`, data);
+  }
+
+  crearTransferSetsDefaults(idEnlace: number): Observable<TransferSet[]> {
+    return this.http.post<TransferSet[]>(`${this.base}/transfersets/defaults/${idEnlace}`, {});
+  }
+
+  actualizarTransferSet(id: number, data: TransferSetUpdate): Observable<TransferSet> {
+    return this.http.put<TransferSet>(`${this.base}/transfersets/${id}`, data);
+  }
+
+  eliminarTransferSet(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/transfersets/${id}`);
   }
 
   // Comentarios

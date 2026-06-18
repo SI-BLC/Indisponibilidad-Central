@@ -47,6 +47,13 @@
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
+              <mat-label>Protocolo</mat-label>
+              <mat-select formControlName="protocolo">
+                <mat-option value="elcom">ELCOM</mat-option>
+                <mat-option value="iccp">ICCP</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
               <mat-label>IP Principal</mat-label>
               <input matInput formControlName="ip1" placeholder="Ej: 192.168.1.100" autocomplete="off" />
               <mat-icon matSuffix style="color:#7c839d;font-size:18px">router</mat-icon>

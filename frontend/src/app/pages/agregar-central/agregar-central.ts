@@ -40,6 +40,7 @@ export class AgregarCentral {
   form = this.fb.group({
     nemo: ['', [Validators.required, Validators.maxLength(50)]],
     tipo: [null as number | null, Validators.required],
+    protocolo: ['elcom', Validators.required],
     ip1: [''],
     ip2: [''],
   });
@@ -54,7 +55,7 @@ export class AgregarCentral {
     if (this.form.invalid) return;
     this.loading.set(true);
     const v = this.form.value;
-    this.api.crearCentral({ nemo: v.nemo!, tipo: v.tipo!, ip1: v.ip1 || null, ip2: v.ip2 || null }).subscribe({
+    this.api.crearCentral({ nemo: v.nemo!, tipo: v.tipo!, protocolo: v.protocolo!, ip1: v.ip1 || null, ip2: v.ip2 || null }).subscribe({
       next: (central) => {
         const pendientes = this.enlacesObtenidos();
         if (pendientes.length === 0) {

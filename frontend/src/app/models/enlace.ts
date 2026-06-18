@@ -43,6 +43,27 @@ export interface GrupoUpdate {
   calcular?: number;
 }
 
+export interface TransferSet {
+  id: number;
+  id_enlace: number;
+  ts_nombre: string;
+  tipo: number;
+  calcular: number;
+}
+
+export interface TransferSetCreate {
+  id_enlace: number;
+  ts_nombre: string;
+  tipo?: number;
+  calcular?: number;
+}
+
+export interface TransferSetUpdate {
+  ts_nombre?: string;
+  tipo?: number;
+  calcular?: number;
+}
+
 export interface Mantenimiento {
   id: number;
   idenlace: number;

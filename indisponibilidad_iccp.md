@@ -27,21 +27,24 @@ Las nuevas centrales utilizan protocolo ICCP (TASE.2), que coexistirá con las c
 - 2 asociaciones: `C` y `S`
 - Estados: `e+`, `i+`, `e`, `i`, `u`, **`s+`** (nuevo — aparece junto a DISABLED)
 
-### Estado `s+` (pendiente de definir)
-Aparece cuando el enlace se deshabilita (`DISABLED`):
+### Estado `s+` (definido)
+`s` = stand-by, `s+` = cambió a stand-by. Aparece cuando el enlace se deshabilita (`DISABLED`):
 ```
 28/08/2025 14:23:59   SRV=CABO-SOTRA   CGEN_CAMM    DISABLED
 28/08/2025 14:23:59   SRV=CABO-SOTRA   CGEN_CAMM    C=s+ S=s+
 ```
-**Pendiente**: confirmar qué significa `s+` y si cuenta como corte o como mantenimiento/suspensión.
+`s+` **NO se usa** para el cálculo de cortes. Solo `i+` (interrupción/corte) y `e+` (establecimiento) son relevantes.
 
-### Asociaciones C y S — pendiente de definir
-El usuario mencionó que en ICCP existen `ACS`, `ASS` y `AS`. Aún no está confirmado cuál de `C` o `S` equivale a la asociación usada para detección de cortes (en ELCOM: `asoc_ac` o `asoc_bc`).
+### Asociaciones C y S (definido)
+- `C` = Cliente ICCP
+- `S` = Servidor ICCP
+- Asociaciones ICCP: `ACS`, `ASS`, `AS`
 
-**Pendiente**: determinar:
-- ¿`C` es la asociación de control/corte? ¿`S` es la de supervisión/estado?
-- ¿Cuál se usa para detectar cortes en el cálculo de indisponibilidad?
-- ¿Se usan ambas o solo una?
+**Ambas se usan para detectar cortes**, de forma análoga a cómo ELCOM procesa AB/AC/BB/BC independientemente. Cuando `C` o `S` va a `i+` → inicio de corte en esa asociación. Cuando va a `e+` → fin de corte.
+
+Equivalencia con ELCOM:
+- ELCOM: 4 asociaciones (AB, AC, BB, BC) → 2 por link según prefijo (A=directo, B=concentrador)
+- ICCP: 2 asociaciones (C, S) → ambas se procesan para cada link
 
 ---
 
@@ -68,11 +71,9 @@ El usuario mencionó que en ICCP existen `ACS`, `ASS` y `AS`. Aún no está conf
 ### Enlace sin sub-líneas
 Si un enlace aparece con la línea de cabecera pero sin TransferSets, significa que no hubo transmisión por ese enlace en ese período. Ejemplo: `CGEN_CAMM` sin sub-líneas + `CGEN_BCOG` con sub-líneas → la central transmitió vía concentrador ICCP.
 
-### Dir=rx vs Dir=tx para el cálculo
-**Pendiente confirmar**:
-- ¿`Dir=tx` (TS_DOM_XXXX) es el equivalente a los datos periódicos AC/BC?
-- ¿`Dir=rx` (Ts numérico) es el equivalente a los no-solicitados AB/BB?
-- ¿Se usa solo `Dir=tx`, o ambas direcciones entran al cálculo?
+### Dir=rx vs Dir=tx para el cálculo (definido)
+- **`Dir=tx`** se usa para el cálculo de indisponibilidad de datos (lo que el nodo transmite a CAMMESA)
+- `Dir=rx` queda fuera del cálculo (datos recibidos, no afectan la disponibilidad hacia CAMMESA)
 
 ---
 
@@ -95,25 +96,47 @@ Mismo patrón de nomenclatura que el BCOG ELCOM.
 ### 4. Campo `protocolo` en tabla `centrales`
 Agregar `protocolo ENUM('elcom','iccp') DEFAULT 'elcom'`. Las centrales existentes quedan automáticamente como `elcom`. Sin impacto en datos existentes.
 
-### 5. Tabla `con` — columnas de asociaciones
-Actualmente: `asoc_ab`, `asoc_ac`, `asoc_bb`, `asoc_bc`
-Para ICCP: solo `C` y `S`
-**Opciones**:
-- Agregar columnas `asoc_c` y `asoc_s` (las ELCOM quedarían NULL para ICCP y viceversa)
-- Mapear `C` → `asoc_ac` y `S` → `asoc_ab` (reutilizar columnas — más simple pero menos explícito)
+### 5. Tablas `con_iccp` y `dat_iccp` (definido — ya existen en DB)
 
-### 6. Tabla `dat` — columna `gr_grupo`
-Actualmente: `gr_grupo INT`
-Para ICCP: Ts puede ser entero (1, 2, 3) o string (TS_DOM_00000)
-**Opciones a evaluar**:
-- Tabla separada `dat_iccp` (más limpio, sin impacto en ELCOM)
-- Columna adicional `ts_nombre VARCHAR` en `dat` actual
-- Cambiar `gr_grupo` a VARCHAR (rompe lógica ELCOM existente — descartado)
+**`con_iccp`**:
+```
+id INT PK, fecha DATETIME, id_enlace INT, srv VARCHAR(32),
+event_type VARCHAR(16), c_state VARCHAR(4), s_state VARCHAR(4), id_sotr INT
+```
+- `c_state` / `s_state` → equivalente a `asoc_ab/ac/bb/bc` de ELCOM
+- `event_type` → ENABLED/DISABLED/estado (no existe en ELCOM)
 
-### 7. Tabla `grupos` → TransferSets
-Actualmente: `grupo INT` + `tipo` + `calcular` por enlace
-Para ICCP: habría que configurar tipo/calcular por TransferSet (string o entero)
-**Pendiente**: definir si se extiende la tabla grupos o se crea una nueva `transfersets`.
+**`dat_iccp`**:
+```
+id INT PK, fecha DATETIME, id_enlace INT, srv VARCHAR(32),
+periodo VARCHAR(16), direction ENUM('rx','tx'), ts VARCHAR(32), ds VARCHAR(32),
+siz INT, exp INT, t INT, g INT, h INT, c INT, e INT, m INT, i INT, id_sotr INT
+```
+- `direction` + `ts` + `ds` → reemplazan `gr_grupo`/`freq`/`st` de ELCOM
+- Solo `direction='tx'` se usa para el cálculo
+
+### 6. Campo `protocolo` en tabla `centrales` (definido)
+Agregar `protocolo ENUM('elcom','iccp') DEFAULT 'elcom'`. Las centrales existentes quedan como `elcom` automáticamente.
+
+### 7. Tabla de configuración TransferSets (definido)
+Se crea tabla `transfersets` (equivalente a `grupos` de ELCOM):
+```sql
+CREATE TABLE transfersets (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    id_enlace  INT NOT NULL,
+    ts_nombre  VARCHAR(50) NOT NULL,   -- ej: TS_DOM_00000, TS_DOM_00001
+    tipo       INT DEFAULT 0,          -- mismo sistema de tipos que ELCOM (1, 3, 5...)
+    calcular   INT DEFAULT 1,
+    UNIQUE KEY uq_enlace_ts (id_enlace, ts_nombre)
+);
+```
+
+Solo se configuran los TransferSets de `Dir=tx` (salida a CAMMESA). Son dinámicos, típicamente 3 por enlace:
+- `TS_DOM_00000` → generalmente tipo=3 o tipo=5
+- `TS_DOM_00001` → generalmente tipo=3 o tipo=5
+- `TS_DOM_00002` → generalmente tipo=1
+
+El tipo varía por enlace/central, por lo que debe ser configurable por cada `{CENTRAL}_CAMM`.
 
 ### 8. Lógica de cálculo (`reporte_service.py`)
 Toda la lógica actual asume ELCOM (columnas `asoc_ab/ac/bb/bc`, grupos enteros, `freq`/`st`).
@@ -122,10 +145,29 @@ Para ICCP se necesitará una rama de procesamiento separada o parametrizar las f
 
 ---
 
-## Pendientes a confirmar con el equipo
+## Estado de pendientes
 
-1. ¿Qué significa `s+` en ICCP? ¿Equivale a mantenimiento, o es un estado de corte?
-2. ¿`C` o `S` (o ambas) se usan para detectar cortes en indisponibilidad?
-3. ¿`Dir=tx` son los datos periódicos y `Dir=rx` los no-solicitados, o al revés?
-4. ¿Cómo se asigna el tipo/peso a cada TransferSet? ¿Es configurable por enlace o tiene reglas fijas?
-5. Definir si se usa tabla `dat_iccp` separada o se extiende la tabla `dat` actual.
+1. ~~`s+`~~ → stand-by, NO se usa para cálculo. Solo `i+` y `e+`.
+2. ~~`C` o `S`~~ → ambas se usan, análogo a AB/AC/BB/BC en ELCOM.
+3. ~~`Dir=tx` o `Dir=rx`~~ → `Dir=tx` para cálculo.
+4. ~~Tipo/peso por TransferSet~~ → configurable por enlace, tabla `transfersets`.
+5. ~~Tabla separada o extender~~ → `con_iccp` y `dat_iccp` separadas.
+
+## Principios de implementación
+
+- **Código ICCP completamente separado de ELCOM**. No modificar lógica ELCOM existente.
+- Servicios ICCP en archivos separados (ej: `reporte_service_iccp.py`)
+- Las centrales ICCP soportan los mismos 3 tipos que ELCOM:
+  - Tipo 1: enlace directo a CAMMESA
+  - Tipo 2: redundante (directo + backup vía concentrador ICCP)
+  - Tipo 3: solo backup (solo vía concentrador ICCP)
+- El concentrador ICCP cumple el mismo rol que BCOG en ELCOM
+- `s+` se ignora; solo `i+` y `e+` son relevantes para cortes
+- Tolerancia y lógica de cortes: igual que ELCOM
+
+## Pendientes restantes
+
+1. **UI**: pantalla de configuración de TransferSets (similar a Grupos de ELCOM)
+2. **Lógica de cálculo ICCP**: implementar servicio separado que lea de `con_iccp`/`dat_iccp`/`transfersets`
+3. **Detalle ICCP**: adaptar `_detalle_central` para centrales ICCP (o crear versión ICCP)
+4. **Reportes TXT ICCP**: generar informe similar al ELCOM pero con TransferSets

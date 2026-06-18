@@ -4,6 +4,7 @@ export interface Central {
   tipo: number;
   ip1?: string | null;
   ip2?: string | null;
+  protocolo: string;
 }
 
 export interface CentralCreate {
@@ -11,6 +12,7 @@ export interface CentralCreate {
   tipo: number;
   ip1?: string | null;
   ip2?: string | null;
+  protocolo?: string;
 }
 
 export interface DashboardCentral {

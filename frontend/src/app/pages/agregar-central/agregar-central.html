@@ -26,22 +26,31 @@
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
-          <mat-label>Tipo de Central</mat-label>
-          <mat-select formControlName="tipo">
-            @for (t of tipos; track t.value) {
-              <mat-option [value]="t.value">
-                <div class="tipo-option">
-                  <mat-icon [style.color]="t.color">{{ t.icon }}</mat-icon>
-                  <div>
-                    <div>{{ t.label }}</div>
-                    <div class="tipo-desc">{{ t.desc }}</div>
+        <div class="ip-row" style="margin-top:8px">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>Tipo de Central</mat-label>
+            <mat-select formControlName="tipo">
+              @for (t of tipos; track t.value) {
+                <mat-option [value]="t.value">
+                  <div class="tipo-option">
+                    <mat-icon [style.color]="t.color">{{ t.icon }}</mat-icon>
+                    <div>
+                      <div>{{ t.label }}</div>
+                      <div class="tipo-desc">{{ t.desc }}</div>
+                    </div>
                   </div>
-                </div>
-              </mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" style="width:160px">
+            <mat-label>Protocolo</mat-label>
+            <mat-select formControlName="protocolo">
+              <mat-option value="elcom">ELCOM</mat-option>
+              <mat-option value="iccp">ICCP</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
 
         <div class="ip-row" style="margin-top:8px">
           <mat-form-field appearance="outline" class="flex-1">

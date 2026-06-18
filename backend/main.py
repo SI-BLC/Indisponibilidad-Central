@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from jose import JWTError, jwt
-from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios
+from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, transfersets
 from routers import auth
 from config import settings
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -144,6 +144,7 @@ app.include_router(resultados.router)
 app.include_router(datos.router)
 app.include_router(carga_manual.router)
 app.include_router(comentarios.router)
+app.include_router(transfersets.router)
 
 
 @app.get("/health")
