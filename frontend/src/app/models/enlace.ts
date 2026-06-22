@@ -43,23 +43,23 @@ export interface GrupoUpdate {
   calcular?: number;
 }
 
-export interface TransferSet {
+export interface DataSet {
   id: number;
   id_enlace: number;
-  ts_nombre: string;
+  ds_nombre: string;
   tipo: number;
   calcular: number;
 }
 
-export interface TransferSetCreate {
+export interface DataSetCreate {
   id_enlace: number;
-  ts_nombre: string;
+  ds_nombre: string;
   tipo?: number;
   calcular?: number;
 }
 
-export interface TransferSetUpdate {
-  ts_nombre?: string;
+export interface DataSetUpdate {
+  ds_nombre?: string;
   tipo?: number;
   calcular?: number;
 }

@@ -1,8 +1,8 @@
 <div class="page-container">
   <div class="page-header">
     <div>
-      <h1 class="page-title">{{ esIccp ? 'Gestión de TransferSets' : 'Gestión de Grupos' }}</h1>
-      <p class="text-muted" style="margin:0;font-size:.875rem">{{ esIccp ? 'Configuración de TransferSets por enlace (ICCP)' : 'Configuración de grupos por enlace' }}</p>
+      <h1 class="page-title">{{ esIccp ? 'Gestión de DataSets' : 'Gestión de Grupos' }}</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">{{ esIccp ? 'Configuración de DataSets por enlace (ICCP)' : 'Configuración de grupos por enlace' }}</p>
     </div>
   </div>
 
@@ -326,55 +326,53 @@
     </div>
   }
 
-  <!-- ═══════════════ ICCP: TransferSets ═══════════════ -->
+  <!-- ═══════════════ ICCP: DataSets ═══════════════ -->
   @if (esIccp && form.value.idEnlace) {
     <div class="table-panel">
       <div class="table-header">
-        <span class="section-title" style="margin:0">TransferSets configurados</span>
+        <span class="section-title" style="margin:0">DataSets configurados</span>
         <div style="display:flex;gap:8px;align-items:center">
-          <span class="badge badge-primary">{{ transferSets().length }} TS</span>
-          @if (transferSets().length === 0) {
-            <button mat-stroked-button (click)="crearTsDefaults()"
-              style="font-size:.78rem;font-weight:700;border-color:rgba(75,208,139,.35);color:#4bd08b;border-radius:8px!important;height:32px;line-height:32px">
-              <mat-icon style="font-size:16px;width:16px;height:16px">add_circle</mat-icon>
-              Crear por defecto
-            </button>
-          }
+          <span class="badge badge-primary">{{ dataSets().length }} DS</span>
+          <button mat-stroked-button (click)="crearDsDefaults()"
+            style="font-size:.78rem;font-weight:700;border-color:rgba(75,208,139,.35);color:#4bd08b;border-radius:8px!important;height:32px;line-height:32px">
+            <mat-icon style="font-size:16px;width:16px;height:16px">add_circle</mat-icon>
+            Crear por defecto
+          </button>
         </div>
       </div>
 
-      <table mat-table [dataSource]="transferSets()">
-        <ng-container matColumnDef="ts_nombre">
-          <th mat-header-cell *matHeaderCellDef>TRANSFERSET</th>
-          <td mat-cell *matCellDef="let ts">
-            @if (editandoTsId() === ts.id) {
-              <input class="inline-input" [formControl]="formTsEditar.controls.ts_nombre" />
+      <table mat-table [dataSource]="dataSets()">
+        <ng-container matColumnDef="ds_nombre">
+          <th mat-header-cell *matHeaderCellDef>DATASET</th>
+          <td mat-cell *matCellDef="let ds">
+            @if (editandoDsId() === ds.id) {
+              <input class="inline-input" [formControl]="formDsEditar.controls.ds_nombre" />
             } @else {
-              <span class="badge badge-primary">{{ ts.ts_nombre }}</span>
+              <span class="badge badge-primary">{{ ds.ds_nombre }}</span>
             }
           </td>
         </ng-container>
 
         <ng-container matColumnDef="tipo">
           <th mat-header-cell *matHeaderCellDef>TIPO</th>
-          <td mat-cell *matCellDef="let ts">
-            @if (editandoTsId() === ts.id) {
-              <input class="inline-input" type="number" [formControl]="formTsEditar.controls.tipo" />
-            } @else { {{ ts.tipo }} }
+          <td mat-cell *matCellDef="let ds">
+            @if (editandoDsId() === ds.id) {
+              <input class="inline-input" type="number" [formControl]="formDsEditar.controls.tipo" />
+            } @else { {{ ds.tipo }} }
           </td>
         </ng-container>
 
         <ng-container matColumnDef="calcular">
           <th mat-header-cell *matHeaderCellDef>CALCULAR</th>
-          <td mat-cell *matCellDef="let ts">
-            @if (editandoTsId() === ts.id) {
+          <td mat-cell *matCellDef="let ds">
+            @if (editandoDsId() === ds.id) {
               <mat-checkbox
-                [checked]="formTsEditar.controls.calcular.value === 1"
-                (change)="formTsEditar.controls.calcular.setValue($event.checked ? 1 : 0)">
+                [checked]="formDsEditar.controls.calcular.value === 1"
+                (change)="formDsEditar.controls.calcular.setValue($event.checked ? 1 : 0)">
               </mat-checkbox>
             } @else {
-              <mat-icon style="font-size:18px;height:18px;width:18px" [style.color]="ts.calcular ? '#4bd08b' : '#7c839d'">
-                {{ ts.calcular ? 'check_circle' : 'cancel' }}
+              <mat-icon style="font-size:18px;height:18px;width:18px" [style.color]="ds.calcular ? '#4bd08b' : '#7c839d'">
+                {{ ds.calcular ? 'check_circle' : 'cancel' }}
               </mat-icon>
             }
           </td>
@@ -382,56 +380,56 @@
 
         <ng-container matColumnDef="acciones">
           <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let ts" class="actions-cell">
-            @if (editandoTsId() === ts.id) {
+          <td mat-cell *matCellDef="let ds" class="actions-cell">
+            @if (editandoDsId() === ds.id) {
               <button mat-icon-button class="save-btn" matTooltip="Guardar"
-                      [disabled]="formTsEditar.invalid" (click)="guardarEdicionTs(ts.id)">
+                      [disabled]="formDsEditar.invalid" (click)="guardarEdicionDs(ds.id)">
                 <mat-icon>check</mat-icon>
               </button>
-              <button mat-icon-button class="cancel-btn" matTooltip="Cancelar" (click)="cancelarEdicionTs()">
+              <button mat-icon-button class="cancel-btn" matTooltip="Cancelar" (click)="cancelarEdicionDs()">
                 <mat-icon>close</mat-icon>
               </button>
             } @else {
-              <button mat-icon-button class="edit-btn" matTooltip="Editar" (click)="editarTs(ts)">
+              <button mat-icon-button class="edit-btn" matTooltip="Editar" (click)="editarDs(ds)">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="eliminarTs(ts.id)">
+              <button mat-icon-button class="delete-btn" matTooltip="Eliminar" (click)="eliminarDs(ds.id)">
                 <mat-icon>delete_outline</mat-icon>
               </button>
             }
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="tsColumns"></tr>
-        <tr mat-row *matRowDef="let r; columns: tsColumns;"
-            [class.editing-row]="editandoTsId() === r.id"></tr>
+        <tr mat-header-row *matHeaderRowDef="dsColumns"></tr>
+        <tr mat-row *matRowDef="let r; columns: dsColumns;"
+            [class.editing-row]="editandoDsId() === r.id"></tr>
       </table>
 
-      @if (transferSets().length === 0) {
+      @if (dataSets().length === 0) {
         <div class="table-empty">
           <mat-icon>layers_clear</mat-icon>
-          <span>Sin TransferSets configurados para este enlace</span>
+          <span>Sin DataSets configurados para este enlace</span>
         </div>
       }
 
       <div class="add-grupo-form">
-        <div class="add-grupo-title"><mat-icon>add_circle_outline</mat-icon> Agregar TransferSet</div>
-        <form [formGroup]="formTs" (ngSubmit)="agregarTs()" class="add-row">
+        <div class="add-grupo-title"><mat-icon>add_circle_outline</mat-icon> Agregar DataSet</div>
+        <form [formGroup]="formDs" (ngSubmit)="agregarDs()" class="add-row">
           <mat-form-field appearance="outline" style="flex:2">
-            <mat-label>Nombre TS</mat-label>
-            <input matInput formControlName="ts_nombre" placeholder="Ej: TS_DOM_00003" />
+            <mat-label>Nombre DS</mat-label>
+            <input matInput formControlName="ds_nombre" placeholder="Ej: DS_0003_03" />
           </mat-form-field>
           <mat-form-field appearance="outline">
             <mat-label>Tipo</mat-label>
             <input matInput type="number" formControlName="tipo" />
           </mat-form-field>
           <div class="calcular-check">
-            <mat-checkbox formControlName="calcular" [checked]="formTs.controls.calcular.value === 1"
-              (change)="formTs.controls.calcular.setValue($event.checked ? 1 : 0)">
+            <mat-checkbox formControlName="calcular" [checked]="formDs.controls.calcular.value === 1"
+              (change)="formDs.controls.calcular.setValue($event.checked ? 1 : 0)">
               Calcular
             </mat-checkbox>
           </div>
-          <button mat-flat-button color="primary" type="submit" [disabled]="formTs.invalid">
+          <button mat-flat-button color="primary" type="submit" [disabled]="formDs.invalid">
             <mat-icon>add</mat-icon> Agregar
           </button>
         </form>

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -26,7 +26,7 @@ interface EnlaceObtenido {
   templateUrl: './agregar-central.html',
   styleUrl: './agregar-central.scss',
 })
-export class AgregarCentral {
+export class AgregarCentral implements OnInit {
   private readonly api = inject(ApiService);
   private readonly router = inject(Router);
   private readonly snack = inject(MatSnackBar);
@@ -36,14 +36,24 @@ export class AgregarCentral {
   loadingEnlaces = signal(false);
   ipCentral = '';
   enlacesObtenidos = signal<EnlaceObtenido[]>([]);
+  concentradores = signal<{id: number; nemo: string}[]>([]);
 
   form = this.fb.group({
     nemo: ['', [Validators.required, Validators.maxLength(50)]],
     tipo: [null as number | null, Validators.required],
     protocolo: ['elcom', Validators.required],
+    id_concentrador: [null as number | null],
     ip1: [''],
     ip2: [''],
   });
+
+  get necesitaConcentrador() { return [2, 3].includes(this.form.value.tipo ?? 0); }
+
+  ngOnInit() {
+    this.api.getCentrales().subscribe({
+      next: (c) => this.concentradores.set(c.filter(x => x.tipo === 4)),
+    });
+  }
 
   readonly tipos = [
     { value: 1, label: 'Tipo 1 — Directa', icon: 'arrow_forward', color: '#539bff', bgColor: 'rgba(83,155,255,.12)', desc: 'Enlace de acceso único directo' },
@@ -55,7 +65,7 @@ export class AgregarCentral {
     if (this.form.invalid) return;
     this.loading.set(true);
     const v = this.form.value;
-    this.api.crearCentral({ nemo: v.nemo!, tipo: v.tipo!, protocolo: v.protocolo!, ip1: v.ip1 || null, ip2: v.ip2 || null }).subscribe({
+    this.api.crearCentral({ nemo: v.nemo!, tipo: v.tipo!, protocolo: v.protocolo!, id_concentrador: v.id_concentrador || null, ip1: v.ip1 || null, ip2: v.ip2 || null }).subscribe({
       next: (central) => {
         const pendientes = this.enlacesObtenidos();
         if (pendientes.length === 0) {

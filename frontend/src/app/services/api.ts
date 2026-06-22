@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Central, CentralCreate, DashboardCentral } from '../models/central';
-import { Enlace, EnlaceCreate, Grupo, GrupoCreate, GrupoUpdate, TransferSet, TransferSetCreate, TransferSetUpdate, Mantenimiento, MantenimientoCreate } from '../models/enlace';
+import { Enlace, EnlaceCreate, Grupo, GrupoCreate, GrupoUpdate, DataSet, DataSetCreate, DataSetUpdate, Mantenimiento, MantenimientoCreate } from '../models/enlace';
 import { ReporteOut, ReporteRequest } from '../models/reporte';
 import { ResultadoReporte, ResultadoCentral, DetalleCentral, CorteReporte, GuardarResultadosResponse, GuardarResultadosMesResponse } from '../models/resultado';
 import { ConItem, DatItem } from '../models/datos';
@@ -198,25 +198,25 @@ export class ApiService {
     return this.http.post<CargaManualResult>(`${this.base}/carga-manual/confirmar`, fd);
   }
 
-  // TransferSets (ICCP)
-  getTransferSets(idEnlace: number): Observable<TransferSet[]> {
-    return this.http.get<TransferSet[]>(`${this.base}/transfersets`, { params: { id_enlace: idEnlace } });
+  // DataSets (ICCP)
+  getDataSets(idEnlace: number): Observable<DataSet[]> {
+    return this.http.get<DataSet[]>(`${this.base}/datasets`, { params: { id_enlace: idEnlace } });
   }
 
-  crearTransferSet(data: TransferSetCreate): Observable<TransferSet> {
-    return this.http.post<TransferSet>(`${this.base}/transfersets`, data);
+  crearDataSetsDefaults(idEnlace: number): Observable<DataSet[]> {
+    return this.http.post<DataSet[]>(`${this.base}/datasets/defaults/${idEnlace}`, {});
   }
 
-  crearTransferSetsDefaults(idEnlace: number): Observable<TransferSet[]> {
-    return this.http.post<TransferSet[]>(`${this.base}/transfersets/defaults/${idEnlace}`, {});
+  crearDataSet(data: DataSetCreate): Observable<DataSet> {
+    return this.http.post<DataSet>(`${this.base}/datasets`, data);
   }
 
-  actualizarTransferSet(id: number, data: TransferSetUpdate): Observable<TransferSet> {
-    return this.http.put<TransferSet>(`${this.base}/transfersets/${id}`, data);
+  actualizarDataSet(id: number, data: DataSetUpdate): Observable<DataSet> {
+    return this.http.put<DataSet>(`${this.base}/datasets/${id}`, data);
   }
 
-  eliminarTransferSet(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.base}/transfersets/${id}`);
+  eliminarDataSet(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/datasets/${id}`);
   }
 
   // Comentarios

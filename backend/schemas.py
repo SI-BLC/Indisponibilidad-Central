@@ -10,6 +10,7 @@ class CentralBase(BaseModel):
     ip1: Optional[str] = None
     ip2: Optional[str] = None
     protocolo: str = "elcom"
+    id_concentrador: Optional[int] = None
 
 
 class CentralCreate(CentralBase):
@@ -22,6 +23,7 @@ class CentralUpdate(BaseModel):
     ip1: Optional[str] = None
     ip2: Optional[str] = None
     protocolo: Optional[str] = None
+    id_concentrador: Optional[int] = None
 
 
 class CentralOut(CentralBase):
@@ -52,25 +54,25 @@ class EnlaceOut(EnlaceBase):
     model_config = {"from_attributes": True}
 
 
-# --- TransferSets (ICCP) ---
-class TransferSetBase(BaseModel):
+# --- DataSets (ICCP) ---
+class DataSetBase(BaseModel):
     id_enlace: int
-    ts_nombre: str
+    ds_nombre: str
     tipo: int = 0
     calcular: int = 1
 
 
-class TransferSetCreate(TransferSetBase):
+class DataSetCreate(DataSetBase):
     pass
 
 
-class TransferSetUpdate(BaseModel):
-    ts_nombre: Optional[str] = None
+class DataSetUpdate(BaseModel):
+    ds_nombre: Optional[str] = None
     tipo: Optional[int] = None
     calcular: Optional[int] = None
 
 
-class TransferSetOut(TransferSetBase):
+class DataSetOut(DataSetBase):
     id: int
     model_config = {"from_attributes": True}
 

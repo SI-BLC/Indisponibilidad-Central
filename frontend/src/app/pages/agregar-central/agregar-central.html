@@ -52,6 +52,18 @@
           </mat-form-field>
         </div>
 
+        @if (necesitaConcentrador) {
+          <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
+            <mat-label>Concentrador</mat-label>
+            <mat-select formControlName="id_concentrador">
+              <mat-option [value]="null">— sin concentrador —</mat-option>
+              @for (c of concentradores(); track c.id) {
+                <mat-option [value]="c.id">{{ c.nemo }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+
         <div class="ip-row" style="margin-top:8px">
           <mat-form-field appearance="outline" class="flex-1">
             <mat-label>IP Principal</mat-label>

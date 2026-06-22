@@ -53,6 +53,17 @@
                 <mat-option value="iccp">ICCP</mat-option>
               </mat-select>
             </mat-form-field>
+            @if (necesitaConcentrador) {
+              <mat-form-field appearance="outline">
+                <mat-label>Concentrador</mat-label>
+                <mat-select formControlName="id_concentrador">
+                  <mat-option [value]="null">— sin concentrador —</mat-option>
+                  @for (c of concentradores; track c.id) {
+                    <mat-option [value]="c.id">{{ c.nemo }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
             <mat-form-field appearance="outline">
               <mat-label>IP Principal</mat-label>
               <input matInput formControlName="ip1" placeholder="Ej: 192.168.1.100" autocomplete="off" />

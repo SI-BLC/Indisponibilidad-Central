@@ -10,13 +10,14 @@ class Central(Base):
     ip2 = Column(String(45), nullable=True)
     tipo = Column(Integer, nullable=True)  # 1=Directa, 2=Redundante, 3=Solo-backup
     protocolo = Column(String(10), nullable=False, default="elcom")  # elcom | iccp
+    id_concentrador = Column(Integer, nullable=True)  # FK a centrales.id del concentrador
 
 
-class TransferSet(Base):
-    __tablename__ = "transfersets"
+class DataSet(Base):
+    __tablename__ = "datasets"
     id = Column(Integer, primary_key=True, index=True)
     id_enlace = Column(Integer, nullable=False, index=True)
-    ts_nombre = Column(String(50), nullable=False)
+    ds_nombre = Column(String(50), nullable=False)
     tipo = Column(Integer, default=0)
     calcular = Column(Integer, default=1)
 

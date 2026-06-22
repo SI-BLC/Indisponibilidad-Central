@@ -118,7 +118,7 @@ def _procesar_datos_dat_pd(ini: datetime, fin: datetime,
     fin_adj = fin + timedelta(minutes=1)
 
     nombre_agente = db.execute(
-        text("""SELECT CASE WHEN UPPER(c.nemo) != 'BCOG' THEN CONCAT(c.nemo,'_CAMM') ELSE e.nombre END
+        text("""SELECT CASE WHEN c.tipo != 4 THEN CONCAT(c.nemo,'_CAMM') ELSE e.nombre END
                 FROM centrales c LEFT JOIN enlaces e ON c.id=e.idcentral
                 WHERE e.id=:e LIMIT 1"""),
         {"e": id_enlace}
@@ -1026,16 +1026,8 @@ def generar_reporte_txt(db: Session, id_central: int,
             {"c": id_central}
         ).scalar()
 
-    # Enlace concentrador: idtipo=3, nombre='{nemo}_CAMM', pertenece a BCOG
-    bcog_id = db.execute(
-        text("SELECT id FROM centrales WHERE UPPER(nemo)='BCOG' LIMIT 1")
-    ).scalar()
-    enlace_bcog = None
-    if bcog_id:
-        enlace_bcog = db.execute(
-            text("SELECT id FROM enlaces WHERE idtipo=3 AND nombre=:nombre AND idcentral=:bcog LIMIT 1"),
-            {"nombre": f"{nemo}_CAMM", "bcog": bcog_id}
-        ).scalar()
+    # Enlace concentrador: buscar bajo el concentrador asociado (id_concentrador)
+    enlace_bcog = _get_enlace_backup_bcog(id_central, db)
 
     txt = ""
 
@@ -1475,13 +1467,20 @@ def _get_enlace_directo(id_central: int, db: Session) -> int | None:
     ).scalar()
 
 
-def _get_enlace_backup_bcog(nemo: str, db: Session) -> int | None:
-    """Enlace concentrador en BCOG para la central con el nemo dado."""
+def _get_enlace_backup_bcog(id_central: int, db: Session) -> int | None:
+    """Enlace concentrador para la central dada.
+    Busca el enlace NEMO_CAMM bajo el concentrador asociado (id_concentrador)."""
+    row = db.execute(
+        text("SELECT nemo, id_concentrador FROM centrales WHERE id=:id LIMIT 1"),
+        {"id": id_central}
+    ).fetchone()
+    if not row or not row[1]:
+        return None
+    nemo, id_conc = row
     return db.execute(
         text("""SELECT e.id FROM enlaces e
-                JOIN centrales bc ON bc.id=e.idcentral AND UPPER(bc.nemo)='BCOG'
-                WHERE UPPER(e.nombre)=UPPER(CONCAT(:n,'_CAMM')) LIMIT 1"""),
-        {"n": nemo}
+                WHERE e.idcentral=:conc AND UPPER(e.nombre)=UPPER(CONCAT(:n,'_CAMM')) LIMIT 1"""),
+        {"conc": id_conc, "n": nemo}
     ).scalar()
 
 
@@ -1555,7 +1554,7 @@ def _calcular_ind_central(
         return float(valores.get("ind_total_norm", 0.0)), False
 
     if tipo == 3:
-        id_e = _get_enlace_backup_bcog(nemo, db)
+        id_e = _get_enlace_backup_bcog(id_central, db)
         if not id_e:
             return None, False
         _, valores, _ = _procesar_enlace_pd(id_e, ini, fin, db)
@@ -1565,7 +1564,7 @@ def _calcular_ind_central(
 
     if tipo == 2:
         id_prim = _get_enlace_directo(id_central, db)
-        id_bck  = _get_enlace_backup_bcog(nemo, db)
+        id_bck  = _get_enlace_backup_bcog(id_central, db)
         if not id_prim or not id_bck:
             return None, False
         return _calcular_tipo2(id_prim, id_bck, ini, fin, db)
@@ -1653,7 +1652,7 @@ def _detalle_central(
 
     # ─── Tipo 1 / Tipo 3 ───────────────────────────────────────────────────
     if tipo in (1, 3):
-        id_e = _get_enlace_directo(id_central, db) if tipo == 1 else _get_enlace_backup_bcog(nemo, db)
+        id_e = _get_enlace_directo(id_central, db) if tipo == 1 else _get_enlace_backup_bcog(id_central, db)
         if not id_e:
             return {"central": nemo, "tipo": tipo, "error": "Enlace no encontrado"}
 
@@ -1706,7 +1705,7 @@ def _detalle_central(
 
     # ─── Tipo 2 ────────────────────────────────────────────────────────────
     id_prim = _get_enlace_directo(id_central, db)
-    id_bck  = _get_enlace_backup_bcog(nemo, db)
+    id_bck  = _get_enlace_backup_bcog(id_central, db)
     if not id_prim or not id_bck:
         return {"central": nemo, "tipo": tipo, "error": "Faltan enlaces (directo o backup)"}
 

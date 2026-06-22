@@ -5,6 +5,7 @@ export interface Central {
   ip1?: string | null;
   ip2?: string | null;
   protocolo: string;
+  id_concentrador?: number | null;
 }
 
 export interface CentralCreate {
@@ -13,6 +14,7 @@ export interface CentralCreate {
   ip1?: string | null;
   ip2?: string | null;
   protocolo?: string;
+  id_concentrador?: number | null;
 }
 
 export interface DashboardCentral {

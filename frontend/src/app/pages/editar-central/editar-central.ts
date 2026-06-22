@@ -47,6 +47,9 @@ export class EditarCentral implements OnInit {
   // Eliminar central
   confirmandoEliminar = false;
 
+  get concentradores() { return this.centrales().filter(c => c.tipo === 4); }
+  get necesitaConcentrador() { return [2, 3].includes(this.formCentral.value.tipo ?? 0); }
+
   readonly tipos = [
     { value: 1, label: 'Tipo 1 — Directa' },
     { value: 2, label: 'Tipo 2 — Redundante' },
@@ -64,6 +67,7 @@ export class EditarCentral implements OnInit {
     nemo: ['', Validators.required],
     tipo: [null as number | null, Validators.required],
     protocolo: ['elcom', Validators.required],
+    id_concentrador: [null as number | null],
     ip1: [''],
     ip2: [''],
   });
@@ -79,7 +83,7 @@ export class EditarCentral implements OnInit {
 
   seleccionar(central: Central) {
     this.centralSeleccionada.set(central);
-    this.formCentral.patchValue({ nemo: central.nemo, tipo: central.tipo, protocolo: central.protocolo ?? 'elcom', ip1: central.ip1 ?? '', ip2: central.ip2 ?? '' });
+    this.formCentral.patchValue({ nemo: central.nemo, tipo: central.tipo, protocolo: central.protocolo ?? 'elcom', id_concentrador: central.id_concentrador ?? null, ip1: central.ip1 ?? '', ip2: central.ip2 ?? '' });
     this.api.getEnlaces(central.id).subscribe({ next: (e) => this.enlaces.set(e) });
     this.confirmandoEliminar = false;
     this.enlacesObtenidos.set([]);
@@ -90,7 +94,7 @@ export class EditarCentral implements OnInit {
     const c = this.centralSeleccionada();
     if (!c || this.formCentral.invalid) return;
     const v = this.formCentral.value;
-    this.api.actualizarCentral(c.id, { nemo: v.nemo!, tipo: v.tipo!, protocolo: v.protocolo!, ip1: v.ip1 || null, ip2: v.ip2 || null }).subscribe({
+    this.api.actualizarCentral(c.id, { nemo: v.nemo!, tipo: v.tipo!, protocolo: v.protocolo!, id_concentrador: v.id_concentrador || null, ip1: v.ip1 || null, ip2: v.ip2 || null }).subscribe({
       next: (updated) => {
         this.centralSeleccionada.set(updated);
         this.centrales.update((list) => list.map((x) => (x.id === updated.id ? updated : x)));
