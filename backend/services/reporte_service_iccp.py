@@ -22,9 +22,10 @@ from services.reporte_service import (
 
 def _estado_inicial_iccp(id_enlace: int, col: str, ini: datetime, db: Session) -> bool:
     """True si el enlace ICCP estaba UP antes de ini.
-    col: 'c_state' o 's_state'."""
+    col: 'c_state' o 's_state'.
+    Incluye s+ (stand-by) en la búsqueda: s+ = inactivo, igual que i+."""
     last = db.execute(
-        text(f"SELECT {col} FROM con_iccp WHERE id_enlace=:e AND {col} IN ('i+','e+') AND fecha<:ini ORDER BY fecha DESC LIMIT 1"),
+        text(f"SELECT {col} FROM con_iccp WHERE id_enlace=:e AND {col} IN ('i+','e+','s+') AND fecha<:ini ORDER BY fecha DESC LIMIT 1"),
         {"e": id_enlace, "ini": ini}
     ).scalar()
     if last is None:
@@ -607,8 +608,9 @@ def _calcular_tipo2_iccp(id_prim: int, id_bck: int, ini: datetime, fin: datetime
 
     corte_ef_seg_neto = sum(max(0.0, c["dur_seg"] - tol_c) for c in cortes_ef)
 
-    prim_active = sum(s["dur_seg"] for s in segments if s["estado"] == "prim")
-    bck_active = sum(s["dur_seg"] for s in segments if s["estado"] == "bck")
+    ambos_seg = sum(s["dur_seg"] for s in segments if s["estado"] == "ambos")
+    prim_active = sum(s["dur_seg"] for s in segments if s["estado"] == "prim") + ambos_seg / 2
+    bck_active = sum(s["dur_seg"] for s in segments if s["estado"] == "bck") + ambos_seg / 2
     total_active = prim_active + bck_active
     prim_frac = prim_active / total_active if total_active > 0 else 0.0
     bck_frac = bck_active / total_active if total_active > 0 else 0.0
@@ -796,8 +798,9 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
 
     corte_ef_seg_neto = sum(max(0.0, c["dur_seg"] - tol_c) for c in cortes_ef)
 
-    prim_active = sum(s["dur_seg"] for s in segments if s["estado"] == "prim")
-    bck_active = sum(s["dur_seg"] for s in segments if s["estado"] == "bck")
+    ambos_seg = sum(s["dur_seg"] for s in segments if s["estado"] == "ambos")
+    prim_active = sum(s["dur_seg"] for s in segments if s["estado"] == "prim") + ambos_seg / 2
+    bck_active = sum(s["dur_seg"] for s in segments if s["estado"] == "bck") + ambos_seg / 2
     total_active = prim_active + bck_active
     prim_frac = prim_active / total_active if total_active > 0 else 0.0
     bck_frac = bck_active / total_active if total_active > 0 else 0.0
