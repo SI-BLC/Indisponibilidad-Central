@@ -13,6 +13,38 @@ export interface ConItem {
   asoc_change: string | null;
 }
 
+export interface ConIccpItem {
+  id: number;
+  fecha: string;
+  id_enlace: number;
+  srv: string;
+  event_type: string;
+  c_state: string;
+  s_state: string;
+  id_sotr: number;
+}
+
+export interface DatIccpItem {
+  id: number;
+  fecha: string;
+  id_enlace: number;
+  srv: string;
+  periodo: string;
+  direction: string;
+  ts: string;
+  ds: string;
+  siz: number | null;
+  exp: number | null;
+  t: number | null;
+  g: number | null;
+  h: number | null;
+  c: number | null;
+  e: number | null;
+  m: number | null;
+  i: number | null;
+  id_sotr: number;
+}
+
 export interface DatItem {
   id: number;
   fecha: string | null;

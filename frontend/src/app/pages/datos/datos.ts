@@ -15,7 +15,7 @@ import { forkJoin } from 'rxjs';
 import { ApiService } from '../../services/api';
 import { Central } from '../../models/central';
 import { Enlace } from '../../models/enlace';
-import { ConItem, DatItem } from '../../models/datos';
+import { ConItem, DatItem, ConIccpItem, DatIccpItem } from '../../models/datos';
 
 @Component({
   selector: 'app-datos',
@@ -36,8 +36,15 @@ export class Datos implements OnInit {
   enlaces   = signal<Enlace[]>([]);
   conData   = signal<ConItem[]>([]);
   datData   = signal<DatItem[]>([]);
+  conIccpData = signal<ConIccpItem[]>([]);
+  datIccpData = signal<DatIccpItem[]>([]);
   loading   = signal(false);
   buscado   = signal(false);
+
+  get esIccp() {
+    const id = this.form.value.idCentral;
+    return this.centrales().find(c => c.id === id)?.protocolo === 'iccp';
+  }
 
   form = this.fb.group({
     idCentral:   [null as number | null, Validators.required],
@@ -55,6 +62,13 @@ export class Datos implements OnInit {
   readonly colsDat = [
     'fecha', 'id_enlace', 'id_gr', 'gr_grupo',
     'siz', 't', 'g', 'h', 'c', 'e', 'm', 'i', 'exp', 'freq', 'st',
+  ];
+  readonly colsConIccp = [
+    'fecha', 'id_enlace', 'srv', 'event_type', 'c_state', 's_state', 'id_sotr',
+  ];
+  readonly colsDatIccp = [
+    'fecha', 'id_enlace', 'srv', 'direction', 'ts', 'ds',
+    'siz', 'exp', 't', 'g', 'h', 'c', 'e', 'm', 'i',
   ];
 
   todosSeleccionados = computed(() => {
@@ -103,18 +117,36 @@ export class Datos implements OnInit {
     this.buscado.set(true);
     this.conData.set([]);
     this.datData.set([]);
+    this.conIccpData.set([]);
+    this.datIccpData.set([]);
 
-    forkJoin({
-      con: this.api.getDatosCon({ ids_enlace: ids, fecha_inicio: inicio, fecha_fin: fin }),
-      dat: this.api.getDatosDat({ ids_enlace: ids, fecha_inicio: inicio, fecha_fin: fin }),
-    }).subscribe({
-      next: ({ con, dat }) => {
-        this.conData.set(con);
-        this.datData.set(dat);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false),
-    });
+    const filtros = { ids_enlace: ids, fecha_inicio: inicio, fecha_fin: fin };
+
+    if (this.esIccp) {
+      forkJoin({
+        con: this.api.getDatosConIccp(filtros),
+        dat: this.api.getDatosDatIccp(filtros),
+      }).subscribe({
+        next: ({ con, dat }) => {
+          this.conIccpData.set(con);
+          this.datIccpData.set(dat);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+    } else {
+      forkJoin({
+        con: this.api.getDatosCon(filtros),
+        dat: this.api.getDatosDat(filtros),
+      }).subscribe({
+        next: ({ con, dat }) => {
+          this.conData.set(con);
+          this.datData.set(dat);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
+    }
   }
 
   private buildDateTime(date: Date, time: string): string {

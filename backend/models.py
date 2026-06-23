@@ -91,6 +91,40 @@ class Dat(Base):
     st = Column(Integer, nullable=True)
 
 
+class ConexionIccp(Base):
+    __tablename__ = "con_iccp"
+    id = Column(Integer, primary_key=True, index=True)
+    fecha = Column(DateTime, nullable=False, index=True)
+    id_enlace = Column(Integer, nullable=False, index=True)
+    srv = Column(String(32), nullable=False)
+    event_type = Column(String(16), nullable=False)
+    c_state = Column(String(4), nullable=False)
+    s_state = Column(String(4), nullable=False)
+    id_sotr = Column(Integer, nullable=False)
+
+
+class DatIccp(Base):
+    __tablename__ = "dat_iccp"
+    id = Column(Integer, primary_key=True, index=True)
+    fecha = Column(DateTime, nullable=False, index=True)
+    id_enlace = Column(Integer, nullable=False, index=True)
+    srv = Column(String(32), nullable=False)
+    periodo = Column(String(16), nullable=False)
+    direction = Column(String(2), nullable=False)
+    ts = Column(String(32), nullable=False)
+    ds = Column(String(32), nullable=False)
+    siz = Column(Integer, nullable=True)
+    exp = Column(Integer, nullable=True)
+    t = Column(Integer, nullable=True)
+    g = Column(Integer, nullable=True)
+    h = Column(Integer, nullable=True)
+    c = Column(Integer, nullable=True)
+    e = Column(Integer, nullable=True)
+    m = Column(Integer, nullable=True)
+    i = Column(Integer, nullable=True)
+    id_sotr = Column(Integer, nullable=False)
+
+
 class Configuracion(Base):
     __tablename__ = "configuracion"
     id = Column(Integer, primary_key=True, index=True)

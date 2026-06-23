@@ -5,7 +5,7 @@ import { Central, CentralCreate, DashboardCentral } from '../models/central';
 import { Enlace, EnlaceCreate, Grupo, GrupoCreate, GrupoUpdate, DataSet, DataSetCreate, DataSetUpdate, Mantenimiento, MantenimientoCreate } from '../models/enlace';
 import { ReporteOut, ReporteRequest } from '../models/reporte';
 import { ResultadoReporte, ResultadoCentral, DetalleCentral, CorteReporte, GuardarResultadosResponse, GuardarResultadosMesResponse } from '../models/resultado';
-import { ConItem, DatItem } from '../models/datos';
+import { ConItem, DatItem, ConIccpItem, DatIccpItem } from '../models/datos';
 import { CargaManualResult } from '../models/carga-manual';
 import { Comentario } from '../models/comentario';
 
@@ -181,6 +181,22 @@ export class ApiService {
     if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
     if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);
     return this.http.get<DatItem[]>(`${this.base}/datos/dat`, { params });
+  }
+
+  getDatosConIccp(filtros: { ids_enlace?: number[]; fecha_inicio?: string; fecha_fin?: string }): Observable<ConIccpItem[]> {
+    let params = new HttpParams();
+    filtros.ids_enlace?.forEach(id => (params = params.append('ids_enlace', id)));
+    if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
+    if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);
+    return this.http.get<ConIccpItem[]>(`${this.base}/datos/con_iccp`, { params });
+  }
+
+  getDatosDatIccp(filtros: { ids_enlace?: number[]; fecha_inicio?: string; fecha_fin?: string }): Observable<DatIccpItem[]> {
+    let params = new HttpParams();
+    filtros.ids_enlace?.forEach(id => (params = params.append('ids_enlace', id)));
+    if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
+    if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);
+    return this.http.get<DatIccpItem[]>(`${this.base}/datos/dat_iccp`, { params });
   }
 
   // Carga Manual

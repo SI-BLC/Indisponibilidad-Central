@@ -88,207 +88,115 @@
 
   @if (buscado() && !loading()) {
 
-    <!-- Tabla CON -->
-    <div class="table-panel">
-      <div class="table-header">
-        <div class="table-header-left">
-          <span class="type-badge con-badge">CON</span>
-          <span class="section-title" style="margin:0">Datos de Conexión</span>
+    @if (!esIccp) {
+      <!-- ═══ ELCOM: Tabla CON ═══ -->
+      <div class="table-panel">
+        <div class="table-header">
+          <div class="table-header-left">
+            <span class="type-badge con-badge">CON</span>
+            <span class="section-title" style="margin:0">Datos de Conexión (ELCOM)</span>
+          </div>
+          <span class="badge badge-muted">{{ conData().length }} registros</span>
         </div>
-        <span class="badge badge-muted">{{ conData().length }} registros</span>
+        @if (conData().length === 0) {
+          <div class="table-empty"><mat-icon>inbox</mat-icon><span>Sin registros CON.</span></div>
+        } @else {
+          <div class="table-scroll">
+            <table mat-table [dataSource]="conData()" class="datos-table">
+              @for (col of colsCon; track col) {
+                <ng-container [matColumnDef]="col">
+                  <th mat-header-cell *matHeaderCellDef>{{ col | uppercase }}</th>
+                  <td mat-cell *matCellDef="let r"><span class="mono">{{ col === 'fecha' ? (r[col] | date:'dd/MM/yy HH:mm:ss') : v(r[col]) }}</span></td>
+                </ng-container>
+              }
+              <tr mat-header-row *matHeaderRowDef="colsCon; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: colsCon;"></tr>
+            </table>
+          </div>
+        }
       </div>
 
-      @if (conData().length === 0) {
-        <div class="table-empty">
-          <mat-icon>inbox</mat-icon>
-          <span>Sin registros CON para los filtros aplicados.</span>
+      <!-- ═══ ELCOM: Tabla DAT ═══ -->
+      <div class="table-panel" style="margin-top:24px">
+        <div class="table-header">
+          <div class="table-header-left">
+            <span class="type-badge dat-badge">DAT</span>
+            <span class="section-title" style="margin:0">Datos de Calidad (ELCOM)</span>
+          </div>
+          <span class="badge badge-muted">{{ datData().length }} registros</span>
         </div>
-      } @else {
-        <div class="table-scroll">
-          <table mat-table [dataSource]="conData()" class="datos-table">
-
-            <ng-container matColumnDef="fecha">
-              <th mat-header-cell *matHeaderCellDef>FECHA</th>
-              <td mat-cell *matCellDef="let r">
-                <span class="mono">{{ r.fecha | date:'dd/MM/yy HH:mm:ss' }}</span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="id_enlace">
-              <th mat-header-cell *matHeaderCellDef>ENLACE ID</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.id_enlace) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="asoc_ab">
-              <th mat-header-cell *matHeaderCellDef>ASOC AB</th>
-              <td mat-cell *matCellDef="let r">
-                <span class="asoc-val" [class.down]="r.asoc_ab==='1'" [class.up]="r.asoc_ab==='2'">
-                  {{ v(r.asoc_ab) }}
-                </span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="asoc_ac">
-              <th mat-header-cell *matHeaderCellDef>ASOC AC</th>
-              <td mat-cell *matCellDef="let r">
-                <span class="asoc-val" [class.down]="r.asoc_ac==='1'" [class.up]="r.asoc_ac==='2'">
-                  {{ v(r.asoc_ac) }}
-                </span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="asoc_bb">
-              <th mat-header-cell *matHeaderCellDef>ASOC BB</th>
-              <td mat-cell *matCellDef="let r">
-                <span class="asoc-val" [class.down]="r.asoc_bb==='1'" [class.up]="r.asoc_bb==='2'">
-                  {{ v(r.asoc_bb) }}
-                </span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="asoc_bc">
-              <th mat-header-cell *matHeaderCellDef>ASOC BC</th>
-              <td mat-cell *matCellDef="let r">
-                <span class="asoc-val" [class.down]="r.asoc_bc==='1'" [class.up]="r.asoc_bc==='2'">
-                  {{ v(r.asoc_bc) }}
-                </span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="elc">
-              <th mat-header-cell *matHeaderCellDef>ELC</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.elc) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="link">
-              <th mat-header-cell *matHeaderCellDef>LINK</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.link) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="integrity_scan">
-              <th mat-header-cell *matHeaderCellDef>INTEGRITY SCAN</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.integrity_scan) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="id_sotr">
-              <th mat-header-cell *matHeaderCellDef>ID SOTR</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.id_sotr) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="asoc_change">
-              <th mat-header-cell *matHeaderCellDef>ASOC CHANGE</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.asoc_change) }}</span></td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="colsCon; sticky: true"></tr>
-            <tr mat-row *matRowDef="let row; columns: colsCon;"></tr>
-          </table>
+        @if (datData().length === 0) {
+          <div class="table-empty"><mat-icon>inbox</mat-icon><span>Sin registros DAT.</span></div>
+        } @else {
+          <div class="table-scroll">
+            <table mat-table [dataSource]="datData()" class="datos-table">
+              @for (col of colsDat; track col) {
+                <ng-container [matColumnDef]="col">
+                  <th mat-header-cell *matHeaderCellDef>{{ col | uppercase }}</th>
+                  <td mat-cell *matCellDef="let r"><span class="mono">{{ col === 'fecha' ? (r[col] | date:'dd/MM/yy HH:mm:ss') : v(r[col]) }}</span></td>
+                </ng-container>
+              }
+              <tr mat-header-row *matHeaderRowDef="colsDat; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: colsDat;"></tr>
+            </table>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- ═══ ICCP: Tabla CON ═══ -->
+      <div class="table-panel">
+        <div class="table-header">
+          <div class="table-header-left">
+            <span class="type-badge con-badge">CON</span>
+            <span class="section-title" style="margin:0">Datos de Conexión (ICCP)</span>
+          </div>
+          <span class="badge badge-muted">{{ conIccpData().length }} registros</span>
         </div>
-      }
-    </div>
-
-    <!-- Tabla DAT -->
-    <div class="table-panel" style="margin-top:24px">
-      <div class="table-header">
-        <div class="table-header-left">
-          <span class="type-badge dat-badge">DAT</span>
-          <span class="section-title" style="margin:0">Datos de Calidad</span>
-        </div>
-        <span class="badge badge-muted">{{ datData().length }} registros</span>
+        @if (conIccpData().length === 0) {
+          <div class="table-empty"><mat-icon>inbox</mat-icon><span>Sin registros CON ICCP.</span></div>
+        } @else {
+          <div class="table-scroll">
+            <table mat-table [dataSource]="conIccpData()" class="datos-table">
+              @for (col of colsConIccp; track col) {
+                <ng-container [matColumnDef]="col">
+                  <th mat-header-cell *matHeaderCellDef>{{ col | uppercase }}</th>
+                  <td mat-cell *matCellDef="let r"><span class="mono">{{ col === 'fecha' ? (r[col] | date:'dd/MM/yy HH:mm:ss') : v(r[col]) }}</span></td>
+                </ng-container>
+              }
+              <tr mat-header-row *matHeaderRowDef="colsConIccp; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: colsConIccp;"></tr>
+            </table>
+          </div>
+        }
       </div>
 
-      @if (datData().length === 0) {
-        <div class="table-empty">
-          <mat-icon>inbox</mat-icon>
-          <span>Sin registros DAT para los filtros aplicados.</span>
+      <!-- ═══ ICCP: Tabla DAT ═══ -->
+      <div class="table-panel" style="margin-top:24px">
+        <div class="table-header">
+          <div class="table-header-left">
+            <span class="type-badge dat-badge">DAT</span>
+            <span class="section-title" style="margin:0">Datos de Calidad (ICCP)</span>
+          </div>
+          <span class="badge badge-muted">{{ datIccpData().length }} registros</span>
         </div>
-      } @else {
-        <div class="table-scroll">
-          <table mat-table [dataSource]="datData()" class="datos-table">
-
-            <ng-container matColumnDef="fecha">
-              <th mat-header-cell *matHeaderCellDef>FECHA</th>
-              <td mat-cell *matCellDef="let r">
-                <span class="mono">{{ r.fecha | date:'dd/MM/yy HH:mm:ss' }}</span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="id_enlace">
-              <th mat-header-cell *matHeaderCellDef>ENLACE ID</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.id_enlace) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="id_gr">
-              <th mat-header-cell *matHeaderCellDef>ID GR</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.id_gr) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="gr_grupo">
-              <th mat-header-cell *matHeaderCellDef>GR GRUPO</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.gr_grupo) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="siz">
-              <th mat-header-cell *matHeaderCellDef>SIZ</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.siz) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="t">
-              <th mat-header-cell *matHeaderCellDef>T</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.t) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="g">
-              <th mat-header-cell *matHeaderCellDef>G</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.g) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="h">
-              <th mat-header-cell *matHeaderCellDef>H</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.h) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="c">
-              <th mat-header-cell *matHeaderCellDef>C</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.c) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="e">
-              <th mat-header-cell *matHeaderCellDef>E</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.e) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="m">
-              <th mat-header-cell *matHeaderCellDef>M</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.m) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="i">
-              <th mat-header-cell *matHeaderCellDef>I</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.i) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="exp">
-              <th mat-header-cell *matHeaderCellDef>EXP</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.exp) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="freq">
-              <th mat-header-cell *matHeaderCellDef>FREQ</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.freq) }}</span></td>
-            </ng-container>
-
-            <ng-container matColumnDef="st">
-              <th mat-header-cell *matHeaderCellDef>ST</th>
-              <td mat-cell *matCellDef="let r"><span class="mono">{{ v(r.st) }}</span></td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="colsDat; sticky: true"></tr>
-            <tr mat-row *matRowDef="let row; columns: colsDat;"></tr>
-          </table>
-        </div>
-      }
-    </div>
+        @if (datIccpData().length === 0) {
+          <div class="table-empty"><mat-icon>inbox</mat-icon><span>Sin registros DAT ICCP.</span></div>
+        } @else {
+          <div class="table-scroll">
+            <table mat-table [dataSource]="datIccpData()" class="datos-table">
+              @for (col of colsDatIccp; track col) {
+                <ng-container [matColumnDef]="col">
+                  <th mat-header-cell *matHeaderCellDef>{{ col | uppercase }}</th>
+                  <td mat-cell *matCellDef="let r"><span class="mono">{{ col === 'fecha' ? (r[col] | date:'dd/MM/yy HH:mm:ss') : v(r[col]) }}</span></td>
+                </ng-container>
+              }
+              <tr mat-header-row *matHeaderRowDef="colsDatIccp; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: colsDatIccp;"></tr>
+            </table>
+          </div>
+        }
+      </div>
+    }
 
   }
 </div>

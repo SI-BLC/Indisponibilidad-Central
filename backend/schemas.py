@@ -240,6 +240,42 @@ class DatOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# --- Datos CON ICCP ---
+class ConIccpOut(BaseModel):
+    id: int
+    fecha: datetime
+    id_enlace: int
+    srv: str
+    event_type: str
+    c_state: str
+    s_state: str
+    id_sotr: int
+    model_config = {"from_attributes": True}
+
+
+# --- Datos DAT ICCP ---
+class DatIccpOut(BaseModel):
+    id: int
+    fecha: datetime
+    id_enlace: int
+    srv: str
+    periodo: str
+    direction: str
+    ts: str
+    ds: str
+    siz: Optional[int] = None
+    exp: Optional[int] = None
+    t: Optional[int] = None
+    g: Optional[int] = None
+    h: Optional[int] = None
+    c: Optional[int] = None
+    e: Optional[int] = None
+    m: Optional[int] = None
+    i: Optional[int] = None
+    id_sotr: int
+    model_config = {"from_attributes": True}
+
+
 # --- Cortes Reporte ---
 class CorteReporteOut(BaseModel):
     id: int

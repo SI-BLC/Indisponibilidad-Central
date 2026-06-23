@@ -1608,12 +1608,16 @@ def _detalle_central(
       eventos_prim, eventos_bck (para Tipo 2)
     """
     row = db.execute(
-        text("SELECT id, nemo, tipo FROM centrales WHERE id=:id LIMIT 1"),
+        text("SELECT id, nemo, tipo, protocolo FROM centrales WHERE id=:id LIMIT 1"),
         {"id": id_central}
     ).fetchone()
     if not row:
         return {}
-    c_id, nemo, tipo = row
+    c_id, nemo, tipo, protocolo = row
+
+    if protocolo == "iccp":
+        from services.reporte_service_iccp import detalle_central_iccp
+        return detalle_central_iccp(id_central, ini, fin, db)
 
     tol_c = int(db.execute(text("SELECT tol_cortes FROM configuracion LIMIT 1")).scalar() or 120)
 
@@ -1875,13 +1879,20 @@ def guardar_resultados_dia(fecha_reporte, db: Session) -> list[dict]:
 
     # ── Paso 2: indisponibilidad por central ──────────────────────────────────
     centrales = db.execute(
-        text("SELECT id, nemo FROM centrales WHERE UPPER(nemo) != 'BCOG'")
+        text("SELECT id, nemo FROM centrales WHERE tipo != 4 OR tipo IS NULL")
     ).fetchall()
     resultados = []
 
     for (id_central, nemo) in centrales:
         try:
-            ind_seg, inconsistencia = _calcular_ind_central(id_central, ini, fin, db)
+            protocolo = db.execute(
+                text("SELECT protocolo FROM centrales WHERE id=:id"), {"id": id_central}
+            ).scalar() or "elcom"
+            if protocolo == "iccp":
+                from services.reporte_service_iccp import calcular_ind_central_iccp
+                ind_seg, inconsistencia = calcular_ind_central_iccp(id_central, ini, fin, db)
+            else:
+                ind_seg, inconsistencia = _calcular_ind_central(id_central, ini, fin, db)
 
             db.execute(
                 text("DELETE FROM resultados_central WHERE id_central=:c AND fecha=:f"),
