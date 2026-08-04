@@ -56,18 +56,18 @@ export class Datos implements OnInit {
   });
 
   readonly colsCon = [
-    'fecha', 'id_enlace', 'asoc_ab', 'asoc_ac', 'asoc_bb', 'asoc_bc',
+    'fecha', 'id_enlace', 'enlace_nombre', 'asoc_ab', 'asoc_ac', 'asoc_bb', 'asoc_bc',
     'elc', 'link', 'integrity_scan', 'id_sotr', 'asoc_change',
   ];
   readonly colsDat = [
-    'fecha', 'id_enlace', 'id_gr', 'gr_grupo',
+    'fecha', 'id_enlace', 'enlace_nombre', 'id_gr', 'gr_grupo',
     'siz', 't', 'g', 'h', 'c', 'e', 'm', 'i', 'exp', 'freq', 'st',
   ];
   readonly colsConIccp = [
-    'fecha', 'id_enlace', 'srv', 'event_type', 'c_state', 's_state', 'id_sotr',
+    'fecha', 'id_enlace', 'enlace_nombre', 'srv', 'event_type', 'c_state', 's_state', 'id_sotr',
   ];
   readonly colsDatIccp = [
-    'fecha', 'id_enlace', 'srv', 'direction', 'ts', 'ds',
+    'fecha', 'id_enlace', 'enlace_nombre', 'srv', 'direction', 'ts', 'ds',
     'siz', 'exp', 't', 'g', 'h', 'c', 'e', 'm', 'i',
   ];
 
@@ -122,14 +122,18 @@ export class Datos implements OnInit {
 
     const filtros = { ids_enlace: ids, fecha_inicio: inicio, fecha_fin: fin };
 
+    const enlaceMap = new Map(this.enlaces().map(e => [e.id, e.nombre]));
+    const enrich = (rows: any[]) =>
+      rows.map(r => ({ ...r, enlace_nombre: enlaceMap.get(r.id_enlace) ?? '—' }));
+
     if (this.esIccp) {
       forkJoin({
         con: this.api.getDatosConIccp(filtros),
         dat: this.api.getDatosDatIccp(filtros),
       }).subscribe({
         next: ({ con, dat }) => {
-          this.conIccpData.set(con);
-          this.datIccpData.set(dat);
+          this.conIccpData.set(enrich(con));
+          this.datIccpData.set(enrich(dat));
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
@@ -140,8 +144,8 @@ export class Datos implements OnInit {
         dat: this.api.getDatosDat(filtros),
       }).subscribe({
         next: ({ con, dat }) => {
-          this.conData.set(con);
-          this.datData.set(dat);
+          this.conData.set(enrich(con));
+          this.datData.set(enrich(dat));
           this.loading.set(false);
         },
         error: () => this.loading.set(false),
