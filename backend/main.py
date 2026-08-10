@@ -3,7 +3,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
+from starlette.formparsers import MultiPartParser
 from jose import JWTError, jwt
+
+MultiPartParser.max_part_size = 1024 * 1024 * 50  # 50 MB
+_orig_mp_init = MultiPartParser.__init__
+def _patched_mp_init(self, *args, **kwargs):
+    kwargs.setdefault("max_files", 10000)
+    kwargs.setdefault("max_fields", 10000)
+    _orig_mp_init(self, *args, **kwargs)
+MultiPartParser.__init__ = _patched_mp_init
 from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets
 from routers import auth
 from config import settings
@@ -41,9 +50,20 @@ async def lifespan(app: FastAPI):
         ))
         _db.commit()
     except Exception:
-        pass  # La columna ya existe
+        pass
     finally:
         _db.close()
+
+    _db_dat = SessionLocal()
+    try:
+        _db_dat.execute(_text(
+            "ALTER TABLE resultados_central ADD COLUMN dat_estado VARCHAR(50) DEFAULT NULL"
+        ))
+        _db_dat.commit()
+    except Exception:
+        pass
+    finally:
+        _db_dat.close()
 
     _db2 = SessionLocal()
     try:
@@ -112,6 +132,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+from starlette.exceptions import HTTPException as StarletteHTTPException
+import logging
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    logging.error(f"[HTTP {exc.status_code}] {request.method} {request.url.path} — {exc.detail}")
+    return JSONResponse(status_code=exc.status_code, content={"detail": str(exc.detail)})
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    logging.exception(f"[500] {request.method} {request.url.path} — {exc}")
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
 
 
 @app.middleware("http")

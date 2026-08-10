@@ -11,11 +11,47 @@ import pandas as pd
 # Reutilizar funciones comunes del servicio ELCOM
 from services.reporte_service import (
     seg_to_hms, _completar, _peso_grupo, _make_corte,
-    _update_excluidos_pd, _misc1_pd, _excluir_periodos_con_corte,
+    _update_excluidos_pd, _misc1_pd,
     _get_enlace_directo, _get_enlace_backup_bcog,
     _construir_timeline_tipo2 as _construir_timeline_tipo2_elcom,
     _fracciones_periodo,
 )
+
+
+def _update_excluidos_iccp(df_dat: pd.DataFrame, df_cortes: pd.DataFrame) -> pd.DataFrame:
+    """Marca analizar=0 para períodos dentro de cortes.
+    ICCP: fecha = INICIO del período."""
+    if df_cortes.empty or df_dat.empty:
+        return df_dat
+    df_dat = df_dat.copy()
+    df_dat["fecha"] = pd.to_datetime(df_dat["fecha"])
+    for _, row in df_cortes.iterrows():
+        ini = pd.Timestamp(row["inicio"])
+        fin = pd.Timestamp(row["fin"])
+        e = row["idenlace"]
+        mask = (df_dat["idenlace"] == e) & (df_dat["fecha"] >= ini) & (df_dat["fecha"] + pd.Timedelta(minutes=30) <= fin)
+        df_dat.loc[mask, "analizar"] = 0
+    return df_dat
+
+
+def _excluir_periodos_con_corte_iccp(df_dat: pd.DataFrame, df_cortes: pd.DataFrame) -> pd.DataFrame:
+    """Excluye registros .dat cuyo período solapan con cortes.
+    ICCP: fecha = INICIO del período (no fin como ELCOM)."""
+    if df_cortes.empty or df_dat.empty:
+        return df_dat
+    df_ef = df_cortes[df_cortes["ind_bruta"] > 0] if "ind_bruta" in df_cortes.columns else df_cortes
+    if df_ef.empty:
+        return df_dat
+    cortes_ini = pd.to_datetime(df_ef["inicio"])
+    cortes_fin = pd.to_datetime(df_ef["fin"])
+
+    def periodo_limpio(fecha: pd.Timestamp) -> bool:
+        p_ini = fecha
+        p_fin = fecha + pd.Timedelta(minutes=30)
+        return not ((cortes_ini < p_fin) & (cortes_fin > p_ini)).any()
+
+    mask = pd.to_datetime(df_dat["fecha"]).apply(periodo_limpio)
+    return df_dat[mask].reset_index(drop=True)
 
 
 # ─── Estado inicial ──────────────────────────────────────────────────────────
@@ -356,10 +392,10 @@ def _procesar_enlace_iccp(id_enlace: int, ini: datetime, fin: datetime,
 
     # Excluir períodos .dat que se solapan con cortes
     if not df_dat.empty and not df_cortes.empty:
-        df_dat = _excluir_periodos_con_corte(df_dat, df_cortes)
+        df_dat = _excluir_periodos_con_corte_iccp(df_dat, df_cortes)
 
     if not df_dat.empty:
-        df_dat = _update_excluidos_pd(df_dat, df_cortes)
+        df_dat = _update_excluidos_iccp(df_dat, df_cortes)
         df_dat = _misc1_pd(df_dat)
         df_sum = _sumas_parciales_iccp(df_dat)
         df_dat = _misc2_iccp(df_dat, df_sum)
@@ -818,8 +854,8 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
 
     periodos_lista = []
     for k in all_fechas:
-        p_end = datetime.fromisoformat(k)
-        p_start = p_end - timedelta(minutes=30)
+        p_start = datetime.fromisoformat(k)
+        p_end = p_start + timedelta(minutes=30)
         frac_p, frac_b = _fracciones_periodo(p_start, p_end, segments)
         frac_gap = max(0.0, 1.0 - frac_p - frac_b)
 

@@ -59,6 +59,7 @@ export class AgregarCentral implements OnInit {
     { value: 1, label: 'Tipo 1 — Directa', icon: 'arrow_forward', color: '#539bff', bgColor: 'rgba(83,155,255,.12)', desc: 'Enlace de acceso único directo' },
     { value: 2, label: 'Tipo 2 — Redundante', icon: 'compare_arrows', color: '#4bd08b', bgColor: 'rgba(75,208,139,.12)', desc: 'Enlace principal con backup activo' },
     { value: 3, label: 'Tipo 3 — Solo Backup', icon: 'backup', color: '#f8c076', bgColor: 'rgba(248,192,118,.12)', desc: 'Únicamente enlace de respaldo' },
+    { value: 4, label: 'Tipo 4 — Concentrador', icon: 'hub', color: '#b39ddb', bgColor: 'rgba(179,157,219,.12)', desc: 'Nodo concentrador de enlaces' },
   ];
 
   guardar() {
