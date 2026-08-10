@@ -151,3 +151,104 @@ elif tipo == 3:
 | 4 | Fix `_procesar_datos_dat_pd`: reemplazar hardcoded `c.id<>7` por `UPPER(c.nemo) != 'BCOG'` | `reporte_service.py` | sesion actual |
 | 5 | Fix `generar_reporte_txt`: reescritura completa usando `central.tipo` (1/2/3) con idtipo correcto (2=directo, 3=concentrador) | `reporte_service.py` | sesion actual |
 | 6 | Nuevo `_generar_txt_corte_efectivo`: intersección de ventanas de corte entre enlace directo y concentrador (Tipo 2) | `reporte_service.py` | sesion actual |
+| 7 | Fix timezone page Datos: `date pipe ':UTC'` sumaba +3h porque JS trata ISO sin TZ como local. Reemplazado por `formatFecha()` que parsea el string ISO como texto + `buildDateTime` sin `toISOString()` | `datos.ts`, `datos.html` | ad0a741 |
+| 8 | Autocomplete con búsqueda en selector de central (6 páginas): editar-central, resultados, reportes, carga-manual, mantenimientos, gestion-datos | frontend (múltiples) | 4585c10 |
+| 9 | Detección de eventos huérfanos (`_detectar_eventos_huerfanos`): e+ sin i+ previo o viceversa, buscando en todo el historial | `reporte_service.py` | af320e9 |
+| 10 | Campo `dat_estado` en `resultados_central`: indica si faltan períodos .dat (< 48) | `reporte_service.py`, `models.py`, `schemas.py` | af320e9 |
+| 11 | Carga manual ICCP: parsers `parser_con_iccp.py` y `parser_dat_iccp.py` + router actualizado | `carga_manual.py`, parsers | 73aebb7 |
+| 12 | Fix exclusión períodos ICCP: `_update_excluidos_iccp` y `_excluir_periodos_con_corte_iccp` corrigen que en ICCP la fecha = inicio del período (no fin como ELCOM) | `reporte_service_iccp.py` | 73aebb7 |
+
+---
+
+## 6. Detección de eventos huérfanos
+
+### Problema
+Cuando se reinicia el servicio que registra eventos CON (ELCOM/ICCP), al levantarse escribe un `e+` (establecimiento) sin haber registrado previamente un `i+` (desconexión). Esto causa que el algoritmo de cortes no detecte el corte real entre el último `e+` previo y el nuevo `e+`.
+
+**Caso real**: SAUJ 31/07/2026 — enlace CGEN_CAMM tiene un `e+` a las 09:49:15 sin un `i+` previo. El enlace venía UP del día anterior, así que el algoritmo asumía que estuvo UP todo el día (0 cortes), cuando en realidad hubo un corte de ~9:49 horas.
+
+### Solución implementada
+Función `_detectar_eventos_huerfanos(id_enlace, ini, fin, db)` en `reporte_service.py`:
+
+1. Determina las columnas de asociación relevantes según tipo de enlace (directo: `asoc_ab/ac`, concentrador: `asoc_bb/bc`)
+2. Para cada columna, busca el **primer evento del día** (`i+` o `e+`)
+3. Busca el **último evento histórico** de esa misma columna (sin límite de fecha hacia atrás)
+4. Si ambos son del mismo tipo (ej: `e+` seguido de `e+`), es un huérfano
+5. Deduplica por `(timestamp, tipo)` para evitar mensajes duplicados cuando ambas asociaciones detectan el mismo evento
+
+### Integración
+- **Tipo 1 y 3**: se ejecuta en `_calcular_ind_central` → setea flag `inconsistencia` en `resultados_central`
+- **Tipo 2**: se ejecuta en `_construir_timeline_tipo2` para ambos enlaces (primario y backup) → las inconsistencias se suman a las existentes (ej: "ambos activos")
+- **Detalle on-the-fly**: se ejecuta en `_detalle_central` → aparece en la sección de inconsistencias del frontend
+
+### Comportamiento
+- **No modifica el cálculo de cortes**: el huérfano se marca como inconsistencia para que el operador lo revise e ingrese los registros faltantes manualmente
+- **Card de resultados**: muestra ícono `warning_amber` naranja cuando `inconsistencia=1`
+- **Recálculo necesario**: los resultados calculados antes de esta implementación no tienen el flag actualizado; deben recalcularse desde la UI
+
+---
+
+## 7. Indicador dat_estado (datos incompletos)
+
+### Problema
+No había forma de saber si una central tenía datos `.dat` incompletos para el día calculado, lo que podía dar indisponibilidades erróneamente bajas.
+
+### Solución
+Función `_evaluar_dat_estado(id_central, ini, fin, db)`:
+
+- Determina los enlaces según tipo de central (1→directo, 2→directo+backup, 3→backup)
+- Cuenta períodos `.dat` distintos en el rango
+- Si hay >= 48 períodos (30min × 48 = 24h) → `null` (completo)
+- Si hay < 48 → `"incompleto"`
+- Soporta ELCOM (`dat`) e ICCP (`dat_iccp` con `direction='tx'`)
+
+### En la UI
+- Campo `dat_estado` en `resultados_central` (migración automática en `lifespan`)
+- Card muestra ícono `sd_card_alert` naranja con tooltip "Datos .dat incompletos"
+
+---
+
+## 8. Fix timezone en página Datos (SIS-45)
+
+### Problema
+Las tablas CON y DAT en la página Datos mostraban las horas corridas +3 horas respecto a la base de datos.
+
+### Causa raíz
+Doble conversión de timezone:
+1. `buildDateTime` usaba `toISOString()` que convierte hora local a UTC (resta 3h al query)
+2. Angular `date` pipe con `':UTC'` reinterpretaba el string ISO como UTC y lo mostraba en hora local (+3h)
+
+El primer fix (commit `5029ea4`) solo agregó `':UTC'` al pipe, lo que empeoró el problema porque `new Date('2026-07-31T07:00:00')` en JS crea hora local, y luego `':UTC'` sumaba +3h para mostrar.
+
+### Fix correcto (ad0a741)
+1. `buildDateTime`: construye el string ISO manualmente sin usar `toISOString()` → envía hora local tal cual al backend
+2. `formatFecha()`: parsea el string ISO como texto puro (`replace('T',' ').replace('Z','')`) → muestra exactamente lo que viene del backend sin conversión de timezone
+
+---
+
+## 9. Autocomplete con búsqueda (SIS-46)
+
+### Problema
+Los selectores de central eran `mat-select` con lista completa. Con muchas centrales, el usuario debía scrollear para encontrar la deseada.
+
+### Solución
+Reemplazo por `mat-autocomplete` en 7 páginas:
+- `datos`, `editar-central`, `resultados`, `reportes`, `carga-manual`, `mantenimientos`, `gestion-datos`
+
+Patrón común:
+```typescript
+searchCentral = new FormControl('');
+centralFilter = signal('');
+filteredCentrales = computed(() => {
+  const term = this.centralFilter().toUpperCase();
+  if (!term) return this.centrales();
+  return this.centrales().filter(c => c.nemo.toUpperCase().includes(term));
+});
+displayCentral = (c: Central | string | null): string => {
+  if (!c || typeof c === 'string') return '';
+  return c.nemo;
+};
+```
+
+- El usuario tipea el acrónimo (NEMO) y se filtra en tiempo real
+- En `resultados`: botón "x" para limpiar y ver todas las centrales
