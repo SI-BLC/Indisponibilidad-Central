@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { provideNativeDateAdapter } from '@angular/material/core';
@@ -23,7 +24,7 @@ import { ConItem, DatItem, ConIccpItem, DatIccpItem } from '../../models/datos';
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatTableModule,
-    MatProgressSpinnerModule, MatDatepickerModule, MatCheckboxModule,
+    MatProgressSpinnerModule, MatAutocompleteModule, MatDatepickerModule, MatCheckboxModule,
   ],
   templateUrl: './datos.html',
   styleUrl: './datos.scss',
@@ -33,6 +34,17 @@ export class Datos implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   centrales = signal<Central[]>([]);
+  searchCentral = new FormControl('');
+  centralFilter = signal('');
+  filteredCentrales = computed(() => {
+    const term = this.centralFilter().toUpperCase();
+    if (!term) return this.centrales();
+    return this.centrales().filter(c => c.nemo.toUpperCase().includes(term));
+  });
+  displayCentral = (c: Central | string | null): string => {
+    if (!c || typeof c === 'string') return '';
+    return c.nemo;
+  };
   enlaces   = signal<Enlace[]>([]);
   conData   = signal<ConItem[]>([]);
   datData   = signal<DatItem[]>([]);
@@ -82,8 +94,16 @@ export class Datos implements OnInit {
     return !!v.idCentral && !!v.fechaInicio && !!v.fechaFin;
   }
 
+  onCentralSelected(event: any) {
+    const central: Central = event.option.value;
+    this.form.controls.idCentral.setValue(central.id);
+  }
+
   ngOnInit() {
     this.api.getCentrales().subscribe(c => this.centrales.set(c));
+    this.searchCentral.valueChanges.subscribe(val => {
+      if (typeof val === 'string') this.centralFilter.set(val);
+    });
 
     this.form.controls.idCentral.valueChanges.subscribe(id => {
       this.enlaces.set([]);
@@ -154,10 +174,19 @@ export class Datos implements OnInit {
   }
 
   private buildDateTime(date: Date, time: string): string {
-    const [h, m] = time.split(':').map(Number);
     const dt = new Date(date);
+    const [h, m] = time.split(':').map(Number);
     dt.setHours(h, m, 0, 0);
-    return dt.toISOString();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(h)}:${pad(m)}:00`;
+  }
+
+  formatFecha(val: string | null): string {
+    if (!val) return '—';
+    const s = val.replace('T', ' ').replace('Z', '');
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}:\d{2})/);
+    if (!m) return val;
+    return `${m[3]}/${m[2]}/${m[1].slice(2)} ${m[4]}`;
   }
 
   v(val: unknown): string {
