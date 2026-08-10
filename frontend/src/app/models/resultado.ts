@@ -4,6 +4,7 @@ export interface ResultadoCentral {
   fecha: string;
   ind_total_seg: number | null;
   inconsistencia: number;
+  dat_estado: string | null;
   generado_en: string | null;
   central_nemo: string | null;
   central_tipo: number | null;

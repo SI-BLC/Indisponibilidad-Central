@@ -1353,6 +1353,66 @@ def _estado_inicial_enlace(id_enlace: int, col: str, ini: datetime, db: Session)
     return last == "e+"
 
 
+def _detectar_eventos_huerfanos(
+    id_enlace: int, ini: datetime, fin: datetime, db: Session
+) -> list[dict]:
+    """Detecta eventos huérfanos: e+ sin i+ previo o i+ sin e+ previo.
+    Compara el primer evento del día en cada asociación contra el último
+    evento histórico de esa asociación (sin límite de fecha)."""
+    es_dir = _es_directo(id_enlace, db)
+    prefix = "a" if es_dir else "b"
+    cols = [f"asoc_{prefix}b", f"asoc_{prefix}c"]
+
+    nombre = db.execute(
+        text("SELECT nombre FROM enlaces WHERE id=:id"), {"id": id_enlace}
+    ).scalar() or str(id_enlace)
+
+    resultado = []
+    seen = set()
+    for col in cols:
+        primer = db.execute(
+            text(f"SELECT fecha, {col} FROM con "
+                 f"WHERE id_enlace=:e AND {col} IN ('i+','e+') "
+                 f"AND fecha>=:ini AND fecha<=:fin "
+                 f"ORDER BY fecha LIMIT 1"),
+            {"e": id_enlace, "ini": ini, "fin": fin}
+        ).fetchone()
+        if not primer:
+            continue
+
+        fecha_ev, tipo_ev = primer
+
+        previo = db.execute(
+            text(f"SELECT {col} FROM con "
+                 f"WHERE id_enlace=:e AND {col} IN ('i+','e+') "
+                 f"AND fecha<:fecha "
+                 f"ORDER BY fecha DESC LIMIT 1"),
+            {"e": id_enlace, "fecha": fecha_ev}
+        ).scalar()
+
+        if previo is None:
+            continue
+
+        if tipo_ev == previo:
+            tipo_nombre = "establecimiento (e+)" if tipo_ev == "e+" else "desconexión (i+)"
+            faltante = "desconexión (i+)" if tipo_ev == "e+" else "establecimiento (e+)"
+            key = (fecha_ev, tipo_ev)
+            if key not in seen:
+                seen.add(key)
+                resultado.append({
+                    "tipo": "evento_huerfano",
+                    "descripcion": (
+                        f"Enlace {nombre}: se registró un {tipo_nombre} a las "
+                        f"{fecha_ev.strftime('%H:%M:%S')} sin una {faltante} "
+                        f"previa. Posible reinicio del servicio de registro."
+                    ),
+                    "t1": fecha_ev,
+                    "t2": fecha_ev,
+                })
+
+    return resultado
+
+
 def _get_link_events(id_enlace: int, ini: datetime, fin: datetime,
                      db: Session) -> list[tuple[datetime, str]]:
     """Retorna eventos i+/e+ del enlace en [ini, fin] usando la asociación no solicitada."""
@@ -1448,6 +1508,9 @@ def _construir_timeline_tipo2(
         for s in segments if s["estado"] == "ninguno"
     ]
     corte_ef_seg = sum(c["dur_seg"] for c in cortes_ef)
+
+    inconsistencias.extend(_detectar_eventos_huerfanos(id_prim, ini, fin, db))
+    inconsistencias.extend(_detectar_eventos_huerfanos(id_bck, ini, fin, db))
 
     return segments, cortes_ef, inconsistencias, corte_ef_seg
 
@@ -1549,18 +1612,20 @@ def _calcular_ind_central(
         if not id_e:
             return None, False
         _, valores, _ = _procesar_enlace_pd(id_e, ini, fin, db)
+        huerfanos = _detectar_eventos_huerfanos(id_e, ini, fin, db)
         if not valores:
-            return 0.0, False
-        return float(valores.get("ind_total_norm", 0.0)), False
+            return 0.0, len(huerfanos) > 0
+        return float(valores.get("ind_total_norm", 0.0)), len(huerfanos) > 0
 
     if tipo == 3:
         id_e = _get_enlace_backup_bcog(id_central, db)
         if not id_e:
             return None, False
         _, valores, _ = _procesar_enlace_pd(id_e, ini, fin, db)
+        huerfanos = _detectar_eventos_huerfanos(id_e, ini, fin, db)
         if not valores:
-            return 0.0, False
-        return float(valores.get("ind_total_norm", 0.0)), False
+            return 0.0, len(huerfanos) > 0
+        return float(valores.get("ind_total_norm", 0.0)), len(huerfanos) > 0
 
     if tipo == 2:
         id_prim = _get_enlace_directo(id_central, db)
@@ -1698,10 +1763,16 @@ def _detalle_central(
             for k, v in sorted(periodos_dat.items())
         ]
 
+        huerfanos = _detectar_eventos_huerfanos(id_e, ini, fin, db)
+        huerfanos_out = [
+            {**inc, "t1": inc["t1"].isoformat(), "t2": inc["t2"].isoformat()}
+            for inc in huerfanos
+        ]
+
         return {
             "central": nemo, "tipo": tipo,
             "ind_total_seg": float(valores.get("ind_total_norm", 0.0)) if valores else 0.0,
-            "inconsistencias": [],
+            "inconsistencias": huerfanos_out,
             "segments": segs,
             "cortes_efectivos": cortes,
             "periodos_dat": periodos_lista,
@@ -1839,6 +1910,73 @@ def _detalle_central(
     }
 
 
+# ─── Evaluación de completitud .dat ──────────────────────────────────────────
+
+def _evaluar_dat_estado(id_central: int, ini: datetime, fin: datetime,
+                         db: Session) -> str | None:
+    """Evalúa si la central tiene datos .dat completos (48 períodos).
+    Returns None si completo, 'incompleto' si faltan períodos."""
+    row = db.execute(
+        text("SELECT tipo, protocolo FROM centrales WHERE id=:id"),
+        {"id": id_central}
+    ).fetchone()
+    if not row:
+        return None
+    tipo, protocolo = row
+    es_iccp = (protocolo == "iccp")
+
+    enlace_ids = []
+    if tipo == 1:
+        eid = _get_enlace_directo(id_central, db)
+        if eid:
+            enlace_ids.append(eid)
+    elif tipo == 3:
+        eid = _get_enlace_backup_bcog(id_central, db)
+        if eid:
+            enlace_ids.append(eid)
+    elif tipo == 2:
+        eid_d = _get_enlace_directo(id_central, db)
+        eid_b = _get_enlace_backup_bcog(id_central, db)
+        if eid_d:
+            enlace_ids.append(eid_d)
+        if eid_b:
+            enlace_ids.append(eid_b)
+    else:
+        return None
+
+    if not enlace_ids:
+        return "incompleto"
+
+    if es_iccp:
+        if len(enlace_ids) == 1:
+            where = "id_enlace = :e1"
+        else:
+            where = "(id_enlace = :e1 OR id_enlace = :e2)"
+        count = db.execute(
+            text(f"""SELECT COUNT(DISTINCT fecha) FROM dat_iccp
+                     WHERE {where} AND direction='tx'
+                     AND fecha >= :ini AND fecha < :fin"""),
+            {"e1": enlace_ids[0], "e2": enlace_ids[1] if len(enlace_ids) > 1 else None,
+             "ini": ini, "fin": fin}
+        ).scalar() or 0
+    else:
+        ini_adj = ini + timedelta(minutes=1)
+        fin_adj = fin + timedelta(minutes=1)
+        if len(enlace_ids) == 1:
+            where = "id_enlace = :e1"
+        else:
+            where = "(id_enlace = :e1 OR id_enlace = :e2)"
+        count = db.execute(
+            text(f"""SELECT COUNT(DISTINCT fecha) FROM dat
+                     WHERE {where}
+                     AND fecha > :ini AND fecha <= :fin"""),
+            {"e1": enlace_ids[0], "e2": enlace_ids[1] if len(enlace_ids) > 1 else None,
+             "ini": ini_adj, "fin": fin_adj}
+        ).scalar() or 0
+
+    return None if count >= 48 else "incompleto"
+
+
 # ─── Guardado de resultados ───────────────────────────────────────────────────
 
 def guardar_resultados_dia(fecha_reporte, db: Session) -> list[dict]:
@@ -1894,17 +2032,19 @@ def guardar_resultados_dia(fecha_reporte, db: Session) -> list[dict]:
             else:
                 ind_seg, inconsistencia = _calcular_ind_central(id_central, ini, fin, db)
 
+            dat_estado = _evaluar_dat_estado(id_central, ini, fin, db)
+
             db.execute(
                 text("DELETE FROM resultados_central WHERE id_central=:c AND fecha=:f"),
                 {"c": id_central, "f": fecha_dia}
             )
             db.execute(
                 text("""INSERT INTO resultados_central
-                        (id_central, fecha, ind_total_seg, inconsistencia, generado_en)
-                        VALUES (:c, :f, :ind, :inc, :gen)"""),
+                        (id_central, fecha, ind_total_seg, inconsistencia, dat_estado, generado_en)
+                        VALUES (:c, :f, :ind, :inc, :ds, :gen)"""),
                 {"c": id_central, "f": fecha_dia,
                  "ind": ind_seg, "inc": int(inconsistencia),
-                 "gen": datetime.now()}
+                 "ds": dat_estado, "gen": datetime.now()}
             )
             db.commit()
             resultados.append({"id_central": id_central, "nemo": nemo, "ok": True,

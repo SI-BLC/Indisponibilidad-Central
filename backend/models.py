@@ -139,6 +139,7 @@ class ResultadoCentral(Base):
     fecha = Column(Date, nullable=False, index=True)
     ind_total_seg = Column(Float, nullable=True)   # segundos totales de indisponibilidad
     inconsistencia = Column(Integer, nullable=False, default=0)  # 0=ok, 1=requiere revisión
+    dat_estado = Column(String(50), nullable=True)  # null=completo, 'incompleto'=faltan períodos .dat
     generado_en = Column(DateTime, nullable=True)
 
 

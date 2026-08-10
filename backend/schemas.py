@@ -163,6 +163,7 @@ class ResultadoCentralOut(BaseModel):
     fecha: date
     ind_total_seg: Optional[float] = None
     inconsistencia: int = 0
+    dat_estado: Optional[str] = None
     generado_en: Optional[datetime] = None
     # Enriquecidos por el endpoint
     central_nemo: Optional[str] = None
