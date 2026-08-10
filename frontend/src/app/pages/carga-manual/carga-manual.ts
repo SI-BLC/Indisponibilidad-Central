@@ -1,4 +1,4 @@
-import { Component, inject, signal, ElementRef, ViewChild } from '@angular/core';
+import { Component, inject, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -6,6 +6,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatInputModule } from '@angular/material/input';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatChipsModule } from '@angular/material/chips';
 import { ApiService } from '../../services/api';
@@ -23,6 +25,8 @@ import { ConfirmDialogComponent } from './confirm-dialog';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatAutocompleteModule,
+    MatInputModule,
     MatDialogModule,
     MatChipsModule,
   ],
@@ -36,14 +40,33 @@ export class CargaManual {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   readonly centralControl = new FormControl<number | null>(null);
+  readonly searchCentral = new FormControl('');
+  readonly centralFilter = signal('');
   readonly centrales = signal<Central[]>([]);
+  readonly filteredCentrales = computed(() => {
+    const term = this.centralFilter().toUpperCase();
+    if (!term) return this.centrales();
+    return this.centrales().filter(c => c.nemo.toUpperCase().includes(term));
+  });
+  displayCentral = (c: Central | string | null): string => {
+    if (!c || typeof c === 'string') return '';
+    return c.nemo;
+  };
   readonly archivosSeleccionados = signal<File[]>([]);
   readonly resultado = signal<CargaManualResult | null>(null);
   readonly cargando = signal(false);
   readonly confirmado = signal(false);
 
+  onCentralSelected(event: any) {
+    const central: Central = event.option.value;
+    this.centralControl.setValue(central.id);
+  }
+
   ngOnInit() {
     this.api.getCentrales().subscribe(c => this.centrales.set(c));
+    this.searchCentral.valueChanges.subscribe(val => {
+      if (typeof val === 'string') this.centralFilter.set(val);
+    });
   }
 
   onFilesSelected(event: Event) {

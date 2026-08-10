@@ -30,11 +30,15 @@
     <form [formGroup]="form" (ngSubmit)="generar()" class="filter-form">
       <mat-form-field appearance="outline">
         <mat-label>Central</mat-label>
-        <mat-select formControlName="idCentral">
-          @for (c of centrales(); track c.id) {
-            <mat-option [value]="c.id">{{ c.nemo }}</mat-option>
+        <input matInput [formControl]="searchCentral"
+          [matAutocomplete]="autoCentral" placeholder="Buscar central..." />
+        <mat-autocomplete #autoCentral="matAutocomplete"
+          [displayWith]="displayCentral"
+          (optionSelected)="onCentralSelected($event)">
+          @for (c of filteredCentrales(); track c.id) {
+            <mat-option [value]="c">{{ c.nemo }}</mat-option>
           }
-        </mat-select>
+        </mat-autocomplete>
       </mat-form-field>
 
       <mat-form-field appearance="outline">

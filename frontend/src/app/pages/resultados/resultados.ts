@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../services/api';
 import { Central } from '../../models/central';
@@ -25,7 +26,7 @@ interface DiaGroup {
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule,
-    MatProgressSpinnerModule, MatTooltipModule,
+    MatProgressSpinnerModule, MatAutocompleteModule, MatTooltipModule,
   ],
   templateUrl: './resultados.html',
   styleUrl: './resultados.scss',
@@ -36,6 +37,17 @@ export class Resultados implements OnInit {
   private readonly router = inject(Router);
 
   centrales = signal<Central[]>([]);
+  searchCentral = new FormControl('');
+  centralFilter = signal('');
+  filteredCentrales = computed(() => {
+    const term = this.centralFilter().toUpperCase();
+    if (!term) return this.centrales();
+    return this.centrales().filter(c => c.nemo.toUpperCase().includes(term));
+  });
+  displayCentral = (c: Central | string | null): string => {
+    if (!c || typeof c === 'string') return '';
+    return c.nemo;
+  };
   diasView  = signal<DiaGroup[]>([]);
   loading   = signal(false);
   buscado   = signal(false);
@@ -48,8 +60,21 @@ export class Resultados implements OnInit {
     fechaHasta: [''],
   });
 
+  onCentralSelected(event: any) {
+    const central: Central = event.option.value;
+    this.form.controls.idCentral.setValue(central.id);
+  }
+
+  clearCentral() {
+    this.searchCentral.setValue('');
+    this.form.controls.idCentral.setValue(null);
+  }
+
   ngOnInit() {
     this.api.getCentrales().subscribe({ next: (c) => this.centrales.set(c) });
+    this.searchCentral.valueChanges.subscribe(val => {
+      if (typeof val === 'string') this.centralFilter.set(val);
+    });
     this.aplicarRango('mes_actual');
     this.buscar();
   }

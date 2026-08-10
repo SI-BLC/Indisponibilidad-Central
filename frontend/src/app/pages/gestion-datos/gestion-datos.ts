@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -10,6 +10,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { ApiService } from '../../services/api';
 import { Central } from '../../models/central';
@@ -30,7 +31,7 @@ interface GrupoCentral {
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatTableModule, MatTooltipModule,
-    MatSnackBarModule, MatProgressSpinnerModule, MatCheckboxModule,
+    MatSnackBarModule, MatProgressSpinnerModule, MatCheckboxModule, MatAutocompleteModule,
   ],
   templateUrl: './gestion-datos.html',
   styleUrl: './gestion-datos.scss',
@@ -41,6 +42,17 @@ export class GestionDatos implements OnInit {
   private readonly snack = inject(MatSnackBar);
 
   centrales = signal<Central[]>([]);
+  searchCentral = new FormControl('');
+  centralFilter = signal('');
+  filteredCentrales = computed(() => {
+    const term = this.centralFilter().toUpperCase();
+    if (!term) return this.centrales();
+    return this.centrales().filter(c => c.nemo.toUpperCase().includes(term));
+  });
+  displayCentral = (c: Central | string | null): string => {
+    if (!c || typeof c === 'string') return '';
+    return c.nemo;
+  };
   enlaces = signal<Enlace[]>([]);
   grupos = signal<Grupo[]>([]);
   editandoId = signal<number | null>(null);
@@ -108,8 +120,17 @@ export class GestionDatos implements OnInit {
 
   get nuevosGruposCount() { return this.gruposCentral().filter(g => g.esNuevo).length; }
 
+  onCentralSelected(event: any) {
+    const central: Central = event.option.value;
+    this.form.controls.idCentral.setValue(central.id);
+    this.onCentralChange(central.id);
+  }
+
   ngOnInit() {
     this.api.getCentrales().subscribe({ next: (c) => this.centrales.set(c) });
+    this.searchCentral.valueChanges.subscribe(val => {
+      if (typeof val === 'string') this.centralFilter.set(val);
+    });
   }
 
   onCentralChange(id: number) {

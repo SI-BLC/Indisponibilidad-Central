@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ApiService } from '../../services/api';
 import { Central } from '../../models/central';
 import { Enlace, EnlaceCreate } from '../../models/enlace';
@@ -25,7 +26,7 @@ interface EnlaceObtenido {
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatTableModule, MatSnackBarModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinnerModule, MatAutocompleteModule,
   ],
   templateUrl: './editar-central.html',
   styleUrl: './editar-central.scss',
@@ -38,6 +39,13 @@ export class EditarCentral implements OnInit {
   centrales = signal<Central[]>([]);
   centralSeleccionada = signal<Central | null>(null);
   enlaces = signal<Enlace[]>([]);
+  searchControl = new FormControl('');
+  searchFilter = signal('');
+  filteredCentrales = computed(() => {
+    const term = this.searchFilter().toUpperCase();
+    if (!term) return this.centrales();
+    return this.centrales().filter(c => c.nemo.toUpperCase().includes(term));
+  });
 
   // Obtener enlaces
   ipCentral = '';
@@ -54,8 +62,9 @@ export class EditarCentral implements OnInit {
     { value: 1, label: 'Tipo 1 — Directa' },
     { value: 2, label: 'Tipo 2 — Redundante' },
     { value: 3, label: 'Tipo 3 — Solo Backup' },
+    { value: 4, label: 'Tipo 4 — Concentrador' },
   ];
-  readonly tipoLabels: Record<number, string> = { 1: 'Directa', 2: 'Redundante', 3: 'Solo Backup' };
+  readonly tipoLabels: Record<number, string> = { 1: 'Directa', 2: 'Redundante', 3: 'Solo Backup', 4: 'Concentrador' };
   readonly enlaceColumns = ['id', 'nombre', 'idtipo', 'rol', 'acciones'];
   readonly rolesDisponibles = [
     { value: null,           label: '— sin rol —' },
@@ -77,8 +86,22 @@ export class EditarCentral implements OnInit {
     idtipo: [null as number | null],
   });
 
+  displayCentral = (c: Central | string | null): string => {
+    if (!c) return '';
+    if (typeof c === 'string') return c;
+    return `${c.nemo} — ${this.tipoLabels[c.tipo] ?? ''}`;
+  };
+
   ngOnInit() {
     this.api.getCentrales().subscribe({ next: (c) => this.centrales.set(c) });
+    this.searchControl.valueChanges.subscribe(val => {
+      if (typeof val === 'string') this.searchFilter.set(val);
+    });
+  }
+
+  onCentralSelected(event: any) {
+    const central: Central = event.option.value;
+    this.seleccionar(central);
   }
 
   seleccionar(central: Central) {

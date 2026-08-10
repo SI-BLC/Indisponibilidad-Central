@@ -1,6 +1,6 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { ApiService } from '../../services/api';
 import { Central } from '../../models/central';
 import { Enlace, Mantenimiento } from '../../models/enlace';
@@ -17,6 +18,7 @@ import { Enlace, Mantenimiento } from '../../models/enlace';
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatTableModule, MatSnackBarModule,
+    MatAutocompleteModule,
   ],
   templateUrl: './mantenimientos.html',
   styleUrl: './mantenimientos.scss',
@@ -27,6 +29,17 @@ export class Mantenimientos implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   centrales = signal<Central[]>([]);
+  searchCentral = new FormControl('');
+  centralFilter = signal('');
+  filteredCentrales = computed(() => {
+    const term = this.centralFilter().toUpperCase();
+    if (!term) return this.centrales();
+    return this.centrales().filter(c => c.nemo.toUpperCase().includes(term));
+  });
+  displayCentral = (c: Central | string | null): string => {
+    if (!c || typeof c === 'string') return '';
+    return c.nemo;
+  };
   enlaces = signal<Enlace[]>([]);
   mantenimientos = signal<Mantenimiento[]>([]);
 
@@ -45,8 +58,17 @@ export class Mantenimientos implements OnInit {
     fin: ['', Validators.required],
   });
 
+  onCentralSelected(event: any) {
+    const central: Central = event.option.value;
+    this.form.controls.idCentral.setValue(central.id);
+    this.onCentralChange(central.id);
+  }
+
   ngOnInit() {
     this.api.getCentrales().subscribe({ next: (c) => this.centrales.set(c) });
+    this.searchCentral.valueChanges.subscribe(val => {
+      if (typeof val === 'string') this.centralFilter.set(val);
+    });
   }
 
   onCentralChange(id: number) {

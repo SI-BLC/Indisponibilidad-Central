@@ -1,21 +1,23 @@
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
 
-.edit-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 20px;
-  align-items: start;
-  @media (max-width: 800px) { grid-template-columns: 1fr; }
-}
-
-.list-panel {
+.selector-panel {
   background: #131720;
   border: 1px solid rgba(255,255,255,.07);
   border-radius: 12px;
-  padding: 16px;
+  padding: 20px 20px 4px;
   box-shadow: 0 4px 24px rgba(0,0,0,.35);
-  position: sticky;
-  top: 20px;
+  margin-bottom: 20px;
+}
+
+.central-search-field {
+  width: 100%;
+  max-width: 480px;
+}
+
+.edit-layout-single {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .panel-title {

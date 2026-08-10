@@ -6,27 +6,28 @@
     </div>
   </div>
 
-  <div class="edit-layout">
-    <!-- Lista -->
-    <div class="list-panel">
-      <div class="panel-title"><mat-icon>list</mat-icon> Centrales</div>
-      @for (c of centrales(); track c.id) {
-        <div class="central-item" [class.active]="centralSeleccionada()?.id === c.id" (click)="seleccionar(c)">
-          <div class="item-avatar">{{ c.nemo.slice(0,2) }}</div>
-          <div class="item-info">
-            <div class="item-nemo">{{ c.nemo }}</div>
-            <div class="item-tipo text-muted">{{ tipoLabels[c.tipo] }}</div>
-          </div>
-          @if (centralSeleccionada()?.id === c.id) {
-            <mat-icon style="color:#539bff;font-size:16px;width:16px;height:16px">arrow_forward_ios</mat-icon>
-          }
-        </div>
-      }
-      @if (centrales().length === 0) {
-        <div class="empty-state" style="padding:24px;font-size:.85rem">Sin centrales</div>
-      }
-    </div>
+  <!-- Selector de central -->
+  <div class="selector-panel">
+    <mat-form-field appearance="outline" class="central-search-field">
+      <mat-label>Buscar central</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="searchControl"
+        [matAutocomplete]="autoCentral"
+        placeholder="Tipeá el acrónimo de la central..." />
+      <mat-autocomplete #autoCentral="matAutocomplete"
+        [displayWith]="displayCentral"
+        (optionSelected)="onCentralSelected($event)">
+        @for (c of filteredCentrales(); track c.id) {
+          <mat-option [value]="c">
+            <span style="font-weight:700;margin-right:8px">{{ c.nemo }}</span>
+            <span style="color:#7c839d;font-size:.8rem">{{ tipoLabels[c.tipo] }}</span>
+          </mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+  </div>
 
+  <div class="edit-layout-single">
     <!-- Editor -->
     <div class="editor-area">
       @if (centralSeleccionada(); as c) {
@@ -238,8 +239,8 @@
         </div>
       } @else {
         <div class="select-prompt">
-          <mat-icon>arrow_back</mat-icon>
-          <p>Seleccioná una central de la lista para editarla</p>
+          <mat-icon>search</mat-icon>
+          <p>Buscá una central para editarla</p>
         </div>
       }
     </div>
