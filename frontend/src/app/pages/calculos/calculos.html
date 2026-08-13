@@ -6,6 +6,12 @@
     </div>
   </div>
 
+  <!-- ═══════════════ TODAS LAS CENTRALES ═══════════════ -->
+  <div class="section-label">
+    <mat-icon>select_all</mat-icon>
+    Todas las centrales
+  </div>
+
   <div class="calculos-grid">
 
     <!-- Mes actual -->
@@ -80,7 +86,6 @@
       }
     </div>
 
-
     <!-- Día específico -->
     <div class="calc-card">
       <div class="calc-card-header">
@@ -118,6 +123,165 @@
             @if (ultimoGuardadoDia()!.fallidos > 0) { , {{ ultimoGuardadoDia()!.fallidos }} fallidas }
           </span>
           <a routerLink="/resultados" class="ver-link">Ver resultados <mat-icon>arrow_forward</mat-icon></a>
+        </div>
+      }
+    </div>
+
+  </div>
+
+  <!-- ═══════════════ POR CENTRAL(ES) ═══════════════ -->
+  <div class="section-label" style="margin-top:32px">
+    <mat-icon>filter_list</mat-icon>
+    Por central(es) seleccionada(s)
+  </div>
+
+  <!-- Selector de centrales -->
+  <div class="selector-centrales">
+    <mat-form-field appearance="outline" class="central-search-field">
+      <mat-label>Agregar central</mat-label>
+      <input matInput [formControl]="searchControl"
+        [matAutocomplete]="autoSel" placeholder="Buscar central..." />
+      <mat-autocomplete #autoSel="matAutocomplete"
+        [displayWith]="displayCentral"
+        (optionSelected)="addCentral($event)">
+        @for (c of filteredCentrales(); track c.id) {
+          <mat-option [value]="c">{{ c.nemo }}
+            @if (c.protocolo && c.protocolo !== 'elcom') {
+              <span class="proto-tag">{{ c.protocolo | uppercase }}</span>
+            }
+          </mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+
+    @if (selectedCentrales().length) {
+      <div class="chips-row">
+        @for (c of selectedCentrales(); track c.id) {
+          <span class="central-chip">
+            {{ c.nemo }}
+            <button (click)="removeCentral(c.id)" class="chip-remove" aria-label="Quitar">
+              <mat-icon>close</mat-icon>
+            </button>
+          </span>
+        }
+        <button class="chip-clear" (click)="selectedCentrales.set([])">Limpiar todas</button>
+      </div>
+    } @else {
+      <p class="text-muted" style="margin:0;font-size:.8rem">Seleccioná una o más centrales para habilitar los cálculos selectivos.</p>
+    }
+  </div>
+
+  <div class="calculos-grid" [class.disabled-grid]="!selectedCentrales().length">
+
+    <!-- Mes actual (selectivo) -->
+    <div class="calc-card">
+      <div class="calc-card-header">
+        <div class="calc-icon-box primary">
+          <mat-icon>calendar_today</mat-icon>
+        </div>
+        <div>
+          <div class="calc-title">Mes Actual</div>
+          <div class="calc-subtitle text-muted">Solo las centrales seleccionadas</div>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="guardarSelMesActual()"
+              [disabled]="guardandoSelMesActual() || !selectedCentrales().length"
+              class="save-btn">
+        @if (guardandoSelMesActual()) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
+        Guardar Resultados
+      </button>
+
+      @if (ultimoGuardadoSelMesActual()) {
+        <div class="guardado-banner" [class.has-errors]="ultimoGuardadoSelMesActual()!.fallidos_total > 0">
+          <mat-icon>{{ ultimoGuardadoSelMesActual()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>
+            <strong>{{ ultimoGuardadoSelMesActual()!.periodo }}</strong> —
+            {{ ultimoGuardadoSelMesActual()!.dias_procesados }} día(s),
+            {{ ultimoGuardadoSelMesActual()!.exitosos_total }} exitosos
+            @if (ultimoGuardadoSelMesActual()!.fallidos_total > 0) { , {{ ultimoGuardadoSelMesActual()!.fallidos_total }} fallidos }
+          </span>
+          <a routerLink="/resultados" class="ver-link">Ver <mat-icon>arrow_forward</mat-icon></a>
+        </div>
+      }
+    </div>
+
+    <!-- Mes anterior (selectivo) -->
+    <div class="calc-card">
+      <div class="calc-card-header">
+        <div class="calc-icon-box warning">
+          <mat-icon>history</mat-icon>
+        </div>
+        <div>
+          <div class="calc-title">Mes Anterior</div>
+          <div class="calc-subtitle text-muted">Solo las centrales seleccionadas</div>
+        </div>
+      </div>
+      <button mat-stroked-button (click)="guardarSelMesAnterior()"
+              [disabled]="guardandoSelMesAnterior() || !selectedCentrales().length"
+              class="save-btn save-btn-warning">
+        @if (guardandoSelMesAnterior()) {
+          <mat-spinner diameter="16" />
+        } @else {
+          <mat-icon>save</mat-icon>
+        }
+        Guardar Mes Anterior
+      </button>
+
+      @if (ultimoGuardadoSelMesAnterior()) {
+        <div class="guardado-banner" [class.has-errors]="ultimoGuardadoSelMesAnterior()!.fallidos_total > 0">
+          <mat-icon>{{ ultimoGuardadoSelMesAnterior()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>
+            <strong>{{ ultimoGuardadoSelMesAnterior()!.periodo }}</strong> —
+            {{ ultimoGuardadoSelMesAnterior()!.dias_procesados }} día(s),
+            {{ ultimoGuardadoSelMesAnterior()!.exitosos_total }} exitosos
+            @if (ultimoGuardadoSelMesAnterior()!.fallidos_total > 0) { , {{ ultimoGuardadoSelMesAnterior()!.fallidos_total }} fallidos }
+          </span>
+          <a routerLink="/resultados" class="ver-link">Ver <mat-icon>arrow_forward</mat-icon></a>
+        </div>
+      }
+    </div>
+
+    <!-- Día específico (selectivo) -->
+    <div class="calc-card">
+      <div class="calc-card-header">
+        <div class="calc-icon-box success">
+          <mat-icon>event_available</mat-icon>
+        </div>
+        <div>
+          <div class="calc-title">Día Específico</div>
+          <div class="calc-subtitle text-muted">Solo las centrales seleccionadas</div>
+        </div>
+      </div>
+
+      <div class="dia-input-row">
+        <input type="date" [value]="fechaDiaSel()"
+               (change)="fechaDiaSel.set($any($event.target).value)"
+               class="date-input" />
+        <button mat-stroked-button (click)="guardarSelDia()"
+                [disabled]="guardandoSelDia() || !fechaDiaSel() || !selectedCentrales().length"
+                class="save-btn save-btn-success">
+          @if (guardandoSelDia()) {
+            <mat-spinner diameter="16" />
+          } @else {
+            <mat-icon>refresh</mat-icon>
+          }
+          Recalcular
+        </button>
+      </div>
+
+      @if (ultimoGuardadoSelDia()) {
+        <div class="guardado-banner" [class.has-errors]="ultimoGuardadoSelDia()!.fallidos > 0">
+          <mat-icon>{{ ultimoGuardadoSelDia()!.fallidos === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>
+            <strong>{{ ultimoGuardadoSelDia()!.fecha }}</strong> —
+            {{ ultimoGuardadoSelDia()!.exitosos }} OK
+            @if (ultimoGuardadoSelDia()!.fallidos > 0) { , {{ ultimoGuardadoSelDia()!.fallidos }} fallidas }
+          </span>
+          <a routerLink="/resultados" class="ver-link">Ver <mat-icon>arrow_forward</mat-icon></a>
         </div>
       }
     </div>

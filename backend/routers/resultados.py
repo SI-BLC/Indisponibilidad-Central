@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import date, datetime, timedelta
-from typing import Optional
+from typing import Optional, List
 import calendar
 from database import get_db
 import models
@@ -18,10 +18,11 @@ def guardar_resultados(
         default=None,
         description="Fecha a procesar (YYYY-MM-DD). Si se omite, se usa el día de ayer.",
     ),
+    id_centrales: Optional[List[int]] = Query(default=None, description="IDs de centrales a calcular (vacío = todas)"),
     db: Session = Depends(get_db),
 ):
     fecha_proc = fecha if fecha else (date.today() - timedelta(days=1))
-    detalle = guardar_resultados_dia(fecha_proc, db)
+    detalle = guardar_resultados_dia(fecha_proc, db, id_centrales or None)
     ok = sum(1 for r in detalle if r.get("ok"))
     return {
         "fecha": str(fecha_proc),
@@ -36,12 +37,13 @@ def guardar_resultados(
 def guardar_resultados_mes_endpoint(
     year: Optional[int] = Query(default=None, description="Año (por defecto: año actual)"),
     month: Optional[int] = Query(default=None, description="Mes (1-12, por defecto: mes actual)"),
+    id_centrales: Optional[List[int]] = Query(default=None, description="IDs de centrales a calcular (vacío = todas)"),
     db: Session = Depends(get_db),
 ):
     hoy = date.today()
     y = year if year else hoy.year
     m = month if month else hoy.month
-    resultado = guardar_resultados_mes(y, m, db)
+    resultado = guardar_resultados_mes(y, m, db, id_centrales or None)
     return resultado
 
 

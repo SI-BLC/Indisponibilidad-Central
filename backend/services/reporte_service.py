@@ -1979,7 +1979,7 @@ def _evaluar_dat_estado(id_central: int, ini: datetime, fin: datetime,
 
 # ─── Guardado de resultados ───────────────────────────────────────────────────
 
-def guardar_resultados_dia(fecha_reporte, db: Session) -> list[dict]:
+def guardar_resultados_dia(fecha_reporte, db: Session, id_centrales: list[int] | None = None) -> list[dict]:
     from datetime import date as date_type
     if isinstance(fecha_reporte, date_type) and not isinstance(fecha_reporte, datetime):
         fecha_reporte = datetime(fecha_reporte.year, fecha_reporte.month, fecha_reporte.day)
@@ -1988,8 +1988,15 @@ def guardar_resultados_dia(fecha_reporte, db: Session) -> list[dict]:
     fin = ini + timedelta(days=1)
     fecha_dia = ini.date()
 
-    # ── Paso 1: cortes por enlace (se mantiene igual que antes) ──────────────
-    enlaces = db.execute(text("SELECT id FROM enlaces")).fetchall()
+    # ── Paso 1: cortes por enlace ────────────────────────────────────────────
+    if id_centrales:
+        ph = ", ".join(f":c{i}" for i in range(len(id_centrales)))
+        params_e = {f"c{i}": v for i, v in enumerate(id_centrales)}
+        enlaces = db.execute(
+            text(f"SELECT id FROM enlaces WHERE idcentral IN ({ph})"), params_e
+        ).fetchall()
+    else:
+        enlaces = db.execute(text("SELECT id FROM enlaces")).fetchall()
     for (id_enlace,) in enlaces:
         try:
             _, _, df_cortes = _procesar_enlace_pd(id_enlace, ini, fin, db)
@@ -2016,9 +2023,17 @@ def guardar_resultados_dia(fecha_reporte, db: Session) -> list[dict]:
             db.rollback()
 
     # ── Paso 2: indisponibilidad por central ──────────────────────────────────
-    centrales = db.execute(
-        text("SELECT id, nemo FROM centrales WHERE tipo != 4 OR tipo IS NULL")
-    ).fetchall()
+    if id_centrales:
+        ph = ", ".join(f":c{i}" for i in range(len(id_centrales)))
+        params_c = {f"c{i}": v for i, v in enumerate(id_centrales)}
+        centrales = db.execute(
+            text(f"SELECT id, nemo FROM centrales WHERE id IN ({ph}) AND (tipo != 4 OR tipo IS NULL)"),
+            params_c
+        ).fetchall()
+    else:
+        centrales = db.execute(
+            text("SELECT id, nemo FROM centrales WHERE tipo != 4 OR tipo IS NULL")
+        ).fetchall()
     resultados = []
 
     for (id_central, nemo) in centrales:
@@ -2057,7 +2072,7 @@ def guardar_resultados_dia(fecha_reporte, db: Session) -> list[dict]:
     return resultados
 
 
-def guardar_resultados_mes(year: int, month: int, db: Session) -> dict:
+def guardar_resultados_mes(year: int, month: int, db: Session, id_centrales: list[int] | None = None) -> dict:
     from datetime import date as date_type
     import calendar
 
@@ -2081,7 +2096,7 @@ def guardar_resultados_mes(year: int, month: int, db: Session) -> dict:
 
     dia_actual = primer_dia
     while dia_actual <= ultimo_dia:
-        detalle = guardar_resultados_dia(dia_actual, db)
+        detalle = guardar_resultados_dia(dia_actual, db, id_centrales)
         ok = sum(1 for r in detalle if r.get("ok"))
         fallidos = len(detalle) - ok
         exitosos_total += ok

@@ -2,10 +2,28 @@
   margin-bottom: 28px;
 }
 
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .875rem;
+  font-weight: 700;
+  color: #7c839d;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 16px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
 .calculos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 20px;
+}
+
+.disabled-grid {
+  opacity: .45;
+  pointer-events: none;
 }
 
 .calc-card {
@@ -113,4 +131,74 @@
   color: inherit; text-decoration: none; font-weight: 600;
   mat-icon { font-size: 14px; width: 14px; height: 14px; }
   &:hover { text-decoration: underline; }
+}
+
+// --- Selector de centrales ---
+.selector-centrales {
+  background: #131720;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.central-search-field {
+  width: 100%;
+  max-width: 400px;
+}
+
+.chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.central-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(83,155,255,.15);
+  color: #539bff;
+  border: 1px solid rgba(83,155,255,.3);
+  border-radius: 20px;
+  padding: 4px 8px 4px 12px;
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.chip-remove {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: .7;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &:hover { opacity: 1; }
+}
+
+.chip-clear {
+  background: none;
+  border: 1px solid rgba(255,255,255,.12);
+  color: #7c839d;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: .75rem;
+  cursor: pointer;
+  &:hover { border-color: #fa896b; color: #fa896b; }
+}
+
+.proto-tag {
+  font-size: .65rem;
+  font-weight: 700;
+  background: rgba(179,157,219,.15);
+  color: #b39ddb;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  vertical-align: middle;
 }

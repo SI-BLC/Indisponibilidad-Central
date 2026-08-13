@@ -99,16 +99,22 @@ export class ApiService {
   }
 
   // Resultados
-  guardarResultados(fecha?: string): Observable<GuardarResultadosResponse> {
+  guardarResultados(fecha?: string, idCentrales?: number[]): Observable<GuardarResultadosResponse> {
     let params = new HttpParams();
     if (fecha) params = params.set('fecha', fecha);
+    if (idCentrales?.length) {
+      for (const id of idCentrales) params = params.append('id_centrales', id);
+    }
     return this.http.post<GuardarResultadosResponse>(`${this.base}/resultados/guardar`, null, { params });
   }
 
-  guardarResultadosMes(year?: number, month?: number): Observable<GuardarResultadosMesResponse> {
+  guardarResultadosMes(year?: number, month?: number, idCentrales?: number[]): Observable<GuardarResultadosMesResponse> {
     let params = new HttpParams();
     if (year) params = params.set('year', year);
     if (month) params = params.set('month', month);
+    if (idCentrales?.length) {
+      for (const id of idCentrales) params = params.append('id_centrales', id);
+    }
     return this.http.post<GuardarResultadosMesResponse>(`${this.base}/resultados/guardar-mes`, null, { params });
   }
 
