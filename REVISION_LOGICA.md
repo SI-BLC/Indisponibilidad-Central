@@ -157,6 +157,7 @@ elif tipo == 3:
 | 10 | Campo `dat_estado` en `resultados_central`: indica si faltan períodos .dat (< 48) | `reporte_service.py`, `models.py`, `schemas.py` | af320e9 |
 | 11 | Carga manual ICCP: parsers `parser_con_iccp.py` y `parser_dat_iccp.py` + router actualizado | `carga_manual.py`, parsers | 73aebb7 |
 | 12 | Fix exclusión períodos ICCP: `_update_excluidos_iccp` y `_excluir_periodos_con_corte_iccp` corrigen que en ICCP la fecha = inicio del período (no fin como ELCOM) | `reporte_service_iccp.py` | 73aebb7 |
+| 13 | Cálculos selectivos: 3 cards nuevas para calcular por central(es) seleccionada(s) con autocomplete + chips | `calculos.*`, `resultados.py`, `reporte_service.py`, `api.ts` | 70e2b9b |
 
 ---
 
@@ -252,3 +253,27 @@ displayCentral = (c: Central | string | null): string => {
 
 - El usuario tipea el acrónimo (NEMO) y se filtra en tiempo real
 - En `resultados`: botón "x" para limpiar y ver todas las centrales
+
+---
+
+## 10. Cálculos selectivos por central(es)
+
+### Problema
+La page de cálculos solo permitía calcular todas las centrales a la vez. Para recalcular una sola central (ej: después de corregir un evento huérfano) había que recalcular todas, lo cual es lento e innecesario.
+
+### Solución
+
+**Backend**:
+- `guardar_resultados_dia` y `guardar_resultados_mes` aceptan parámetro `id_centrales: list[int] | None`
+- Cuando se pasa, filtra enlaces por `idcentral IN (...)` y centrales por `id IN (...)`
+- Endpoints `/resultados/guardar` y `/resultados/guardar-mes` aceptan query param `id_centrales` (repetible)
+- Compatible con ELCOM e ICCP: el dispatcher por protocolo se ejecuta igual
+
+**Frontend** (page Cálculos):
+- Sección "Todas las centrales": 3 cards originales sin cambios
+- Sección "Por central(es) seleccionada(s)": 3 cards espejo
+  - Selector multi-central con `mat-autocomplete` + chips removibles
+  - Las centrales ya seleccionadas se excluyen del autocomplete
+  - Botón "Limpiar todas" para resetear selección
+  - Cards deshabilitadas (opacity + pointer-events none) si no hay centrales seleccionadas
+  - Muestra tag `ICCP` junto al nombre cuando la central es de protocolo ICCP
