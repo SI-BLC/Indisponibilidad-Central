@@ -158,6 +158,7 @@ elif tipo == 3:
 | 11 | Carga manual ICCP: parsers `parser_con_iccp.py` y `parser_dat_iccp.py` + router actualizado | `carga_manual.py`, parsers | 73aebb7 |
 | 12 | Fix exclusión períodos ICCP: `_update_excluidos_iccp` y `_excluir_periodos_con_corte_iccp` corrigen que en ICCP la fecha = inicio del período (no fin como ELCOM) | `reporte_service_iccp.py` | 73aebb7 |
 | 13 | Cálculos selectivos: 3 cards nuevas para calcular por central(es) seleccionada(s) con autocomplete + chips | `calculos.*`, `resultados.py`, `reporte_service.py`, `api.ts` | 70e2b9b |
+| 14 | Cortes manuales: page nueva para insertar i+/e+ manualmente, sidebar con sub-items, link desde inconsistencias | `cortes_manuales.py`, `cortes-manuales.*`, `sidebar.*`, `resultado-detalle.*` | 1c8c0d4 |
 
 ---
 
@@ -277,3 +278,42 @@ La page de cálculos solo permitía calcular todas las centrales a la vez. Para 
   - Botón "Limpiar todas" para resetear selección
   - Cards deshabilitadas (opacity + pointer-events none) si no hay centrales seleccionadas
   - Muestra tag `ICCP` junto al nombre cuando la central es de protocolo ICCP
+
+---
+
+## 11. Cortes manuales
+
+### Problema
+Cuando se detecta un evento huérfano (ej: e+ sin i+ previo por reinicio del servicio), el operador necesita insertar manualmente el registro faltante para que el recálculo refleje el corte real.
+
+### Solución
+
+**Backend** (`/cortes-manuales`):
+- `POST /`: Inserta un par de registros en la tabla `con` (o `con_iccp`):
+  - `i+` en `fecha_inicio` (desconexión)
+  - `e+` en `fecha_fin` (establecimiento)
+  - Campo `asoc_change='manual'` identifica registros insertados manualmente
+  - Determina automáticamente la columna de asociación según `idtipo` del enlace
+- `GET /`: Lista registros manuales con filtro opcional por enlace y fecha
+- `DELETE /{id}`: Elimina solo si `asoc_change='manual'`
+
+**Frontend** (page `/cortes-manuales`):
+- Formulario: central (autocomplete), enlace (select), fecha/hora inicio, fecha/hora fin
+- Historial de registros manuales por enlace con eliminación
+- Pre-carga desde query params: `?central=72&fecha=2026-07-31&hora=09:49:15`
+
+**Sidebar**:
+- "Datos" ahora es un grupo expandible con dos sub-items:
+  - "Datos" → `/datos` (page existente)
+  - "Cortes Manuales" → `/cortes-manuales`
+- Se expande automáticamente si la ruta activa coincide
+
+**Resultado-detalle**:
+- Panel de inconsistencias muestra link "Insertar corte manual" que navega a `/cortes-manuales` con central, fecha y hora pre-cargados
+
+### Flujo del operador
+1. Ve inconsistencia en resultado-detalle (ej: "e+ sin i+ previo a las 09:49:15")
+2. Click en "Insertar corte manual" → abre page con datos pre-cargados
+3. Selecciona enlace, ajusta horarios si necesario, inserta
+4. Vuelve a Cálculos → recalcula el día para esa central
+5. El resultado ahora refleja el corte real
