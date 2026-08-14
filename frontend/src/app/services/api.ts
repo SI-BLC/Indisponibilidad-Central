@@ -259,7 +259,7 @@ export class ApiService {
   }
 
   // Cortes manuales
-  insertarCorteManual(body: { id_enlace: number; fecha_inicio: string; fecha_fin: string }): Observable<any> {
+  insertarCorteManual(body: { id_enlace: number; fecha: string }): Observable<any> {
     return this.http.post(`${this.base}/cortes-manuales/`, body);
   }
 

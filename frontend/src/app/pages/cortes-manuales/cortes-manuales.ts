@@ -52,8 +52,7 @@ export class CortesManuales implements OnInit {
   form = this.fb.group({
     idCentral: [null as number | null, Validators.required],
     idEnlace: [null as number | null, Validators.required],
-    fechaInicio: ['', Validators.required],
-    fechaFin: ['', Validators.required],
+    fechaCorte: ['', Validators.required],
   });
 
   readonly columns = ['fecha', 'tipo', 'enlace', 'acciones'];
@@ -78,10 +77,8 @@ export class CortesManuales implements OnInit {
       this.form.controls.idCentral.setValue(central.id);
       this.onCentralChange(central.id);
 
-      this.form.patchValue({
-        fechaInicio: `${fecha}T00:00`,
-        fechaFin: `${fecha}T${hora.slice(0, 5)}`,
-      });
+      const horaCorta = hora.length >= 5 ? hora.slice(0, 5) : hora;
+      this.form.patchValue({ fechaCorte: `${fecha}T${horaCorta}` });
     });
   }
 
@@ -108,13 +105,12 @@ export class CortesManuales implements OnInit {
 
     this.api.insertarCorteManual({
       id_enlace: v.idEnlace!,
-      fecha_inicio: v.fechaInicio!,
-      fecha_fin: v.fechaFin!,
+      fecha: v.fechaCorte!,
     }).subscribe({
       next: () => {
-        this.snack.open('Corte manual insertado correctamente', 'OK', { duration: 4000 });
+        this.snack.open('Desconexión (i+) insertada en todas las asociaciones', 'OK', { duration: 4000 });
         this.guardando.set(false);
-        this.form.patchValue({ fechaInicio: '', fechaFin: '' });
+        this.form.patchValue({ fechaCorte: '' });
         if (v.idEnlace) this.cargarHistorialEnlace(v.idEnlace);
       },
       error: (e) => {
@@ -136,8 +132,7 @@ export class CortesManuales implements OnInit {
   }
 
   private cargarHistorial(idCentral: number) {
-    const enlaces$ = this.api.getEnlaces(idCentral);
-    enlaces$.subscribe(enlaces => {
+    this.api.getEnlaces(idCentral).subscribe(enlaces => {
       if (enlaces.length > 0) {
         this.cargarHistorialEnlace(enlaces[0].id);
       } else {

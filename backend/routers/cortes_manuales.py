@@ -13,26 +13,23 @@ ID_SOTR_MANUAL = 0
 
 class CorteManualIn(BaseModel):
     id_enlace: int
-    fecha_inicio: str  # ISO datetime
-    fecha_fin: str     # ISO datetime
+    fecha: str  # ISO datetime del i+ a insertar
 
 
 class CorteManualOut(BaseModel):
-    id_inicio: int
-    id_fin: int
+    id: int
     id_enlace: int
-    fecha_inicio: str
-    fecha_fin: str
+    fecha: str
 
 
-def _get_asoc_col(id_enlace: int, db: Session) -> str:
-    """Determina la columna de asociación correcta para el enlace."""
+def _get_asoc_cols(id_enlace: int, db: Session) -> list[str]:
+    """Retorna las dos columnas de asociación del enlace (ab/ac o bb/bc)."""
     idtipo = db.execute(
         text("SELECT idtipo FROM enlaces WHERE id=:id"), {"id": id_enlace}
     ).scalar()
     if idtipo == 2:
-        return "asoc_ab"
-    return "asoc_bb"
+        return ["asoc_ab", "asoc_ac"]
+    return ["asoc_bb", "asoc_bc"]
 
 
 @router.post("/", response_model=CorteManualOut)
@@ -47,12 +44,8 @@ def insertar_corte_manual(
     if not enlace:
         raise HTTPException(404, "Enlace no encontrado")
 
-    ini = datetime.fromisoformat(body.fecha_inicio)
-    fin = datetime.fromisoformat(body.fecha_fin)
-    if fin <= ini:
-        raise HTTPException(400, "La fecha fin debe ser posterior a la fecha inicio")
-
-    col = _get_asoc_col(body.id_enlace, db)
+    fecha = datetime.fromisoformat(body.fecha)
+    cols = _get_asoc_cols(body.id_enlace, db)
 
     protocolo = db.execute(
         text("""SELECT c.protocolo FROM centrales c
@@ -60,46 +53,28 @@ def insertar_corte_manual(
                 WHERE e.id = :eid"""),
         {"eid": body.id_enlace}
     ).scalar() or "elcom"
-    tabla = "con_iccp" if protocolo == "iccp" else "con"
 
-    if tabla == "con":
+    if protocolo == "iccp":
         db.execute(
-            text(f"""INSERT INTO con (fecha, id_enlace, {col}, id_sotr, asoc_change)
-                     VALUES (:f, :e, 'i+', :sotr, 'manual')"""),
-            {"f": ini, "e": body.id_enlace, "sotr": ID_SOTR_MANUAL}
+            text("""INSERT INTO con_iccp (fecha, id_enlace, asoc_c, asoc_s, id_sotr)
+                     VALUES (:f, :e, 'i+', 'i+', :sotr)"""),
+            {"f": fecha, "e": body.id_enlace, "sotr": ID_SOTR_MANUAL}
         )
-        id_inicio = db.execute(text("SELECT LAST_INSERT_ID()")).scalar()
-
-        db.execute(
-            text(f"""INSERT INTO con (fecha, id_enlace, {col}, id_sotr, asoc_change)
-                     VALUES (:f, :e, 'e+', :sotr, 'manual')"""),
-            {"f": fin, "e": body.id_enlace, "sotr": ID_SOTR_MANUAL}
-        )
-        id_fin = db.execute(text("SELECT LAST_INSERT_ID()")).scalar()
     else:
-        srv_col = "asoc_c" if col.endswith("b") else "asoc_s"
+        set_clause = ", ".join(f"{c} = 'i+'" for c in cols)
         db.execute(
-            text(f"""INSERT INTO con_iccp (fecha, id_enlace, {srv_col}, id_sotr)
-                     VALUES (:f, :e, 'i+', :sotr)"""),
-            {"f": ini, "e": body.id_enlace, "sotr": ID_SOTR_MANUAL}
+            text(f"""INSERT INTO con (fecha, id_enlace, {', '.join(cols)}, id_sotr, asoc_change)
+                     VALUES (:f, :e, {', '.join(["'i+'"] * len(cols))}, :sotr, 'manual')"""),
+            {"f": fecha, "e": body.id_enlace, "sotr": ID_SOTR_MANUAL}
         )
-        id_inicio = db.execute(text("SELECT LAST_INSERT_ID()")).scalar()
 
-        db.execute(
-            text(f"""INSERT INTO con_iccp (fecha, id_enlace, {srv_col}, id_sotr)
-                     VALUES (:f, :e, 'e+', :sotr)"""),
-            {"f": fin, "e": body.id_enlace, "sotr": ID_SOTR_MANUAL}
-        )
-        id_fin = db.execute(text("SELECT LAST_INSERT_ID()")).scalar()
-
+    new_id = db.execute(text("SELECT LAST_INSERT_ID()")).scalar()
     db.commit()
 
     return CorteManualOut(
-        id_inicio=id_inicio,
-        id_fin=id_fin,
+        id=new_id,
         id_enlace=body.id_enlace,
-        fecha_inicio=body.fecha_inicio,
-        fecha_fin=body.fecha_fin,
+        fecha=body.fecha,
     )
 
 

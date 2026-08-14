@@ -3,17 +3,18 @@
     <div>
       <h1 class="page-title">Cortes Manuales</h1>
       <p class="text-muted" style="margin:0;font-size:.875rem">
-        Insertar registros de conexión (i+/e+) manualmente para corregir inconsistencias
+        Insertar registros de desconexión (i+) manualmente para corregir inconsistencias
       </p>
     </div>
   </div>
 
   <!-- Formulario -->
   <div class="form-panel">
-    <div class="panel-title"><mat-icon>edit_note</mat-icon> Insertar corte</div>
+    <div class="panel-title"><mat-icon>edit_note</mat-icon> Insertar desconexión (i+)</div>
     <p class="form-help text-muted">
-      Insertá la hora de inicio (desconexión i+) y fin (establecimiento e+) del corte.
-      Luego recalculá el día desde la page de Cálculos para que se refleje en los resultados.
+      Insertá la fecha y hora de la desconexión faltante. Se registrará un <strong>i+</strong> en
+      todas las asociaciones del enlace seleccionado.
+      Luego recalculá el día desde Cálculos para que se refleje en los resultados.
     </p>
 
     <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
@@ -40,13 +41,8 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Inicio del corte (i+)</mat-label>
-        <input matInput type="datetime-local" formControlName="fechaInicio" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Fin del corte (e+)</mat-label>
-        <input matInput type="datetime-local" formControlName="fechaFin" />
+        <mat-label>Fecha/hora de la desconexión (i+)</mat-label>
+        <input matInput type="datetime-local" formControlName="fechaCorte" />
       </mat-form-field>
 
       <div class="form-submit">
@@ -57,7 +53,7 @@
           } @else {
             <mat-icon>add</mat-icon>
           }
-          Insertar corte
+          Insertar i+
         </button>
       </div>
     </form>
