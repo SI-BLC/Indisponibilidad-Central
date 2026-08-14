@@ -45,6 +45,10 @@
           @for (inc of d.inconsistencias; track inc.t1) {
             <div class="alert-item">{{ inc.descripcion }} ({{ horaCorta(inc.t1) }})</div>
           }
+          <a class="alert-action" [routerLink]="['/cortes-manuales']"
+            [queryParams]="{ central: centralId, fecha: fecha, hora: horaCorta(d.inconsistencias[0].t1) }">
+            <mat-icon>edit_note</mat-icon> Insertar corte manual
+          </a>
         </div>
       </div>
     }

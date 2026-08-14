@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 
 interface NavItem {
@@ -8,6 +7,7 @@ interface NavItem {
   icon: string;
   route: string;
   badge?: string;
+  children?: NavItem[];
 }
 
 @Component({
@@ -26,8 +26,26 @@ export class Sidebar {
     { label: 'Mantenimientos', icon: 'build', route: '/mantenimientos' },
     { label: 'Gestión de Grupos', icon: 'storage', route: '/gestion-datos' },
     { label: 'Resultados', icon: 'assessment', route: '/resultados' },
-    { label: 'Datos', icon: 'table_view', route: '/datos' },
+    {
+      label: 'Datos', icon: 'table_view', route: '',
+      children: [
+        { label: 'Datos', icon: 'table_view', route: '/datos' },
+        { label: 'Cortes Manuales', icon: 'edit_note', route: '/cortes-manuales' },
+      ]
+    },
     { label: 'Cálculos', icon: 'calculate', route: '/calculos' },
     { label: 'Carga Manual', icon: 'upload', route: '/carga-manual' },
   ];
+
+  expandedGroup: string | null = null;
+
+  toggleGroup(label: string) {
+    this.expandedGroup = this.expandedGroup === label ? null : label;
+  }
+
+  isGroupActive(item: NavItem): boolean {
+    if (!item.children) return false;
+    const path = typeof window !== 'undefined' ? window.location.pathname : '';
+    return item.children.some(c => path.startsWith(c.route));
+  }
 }

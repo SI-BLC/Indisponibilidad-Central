@@ -75,6 +75,12 @@ export const routes: Routes = [
       import('./pages/datos/datos').then((m) => m.Datos),
   },
   {
+    path: 'cortes-manuales',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/cortes-manuales/cortes-manuales').then((m) => m.CortesManuales),
+  },
+  {
     path: 'calculos',
     canActivate: [authGuard],
     loadComponent: () =>

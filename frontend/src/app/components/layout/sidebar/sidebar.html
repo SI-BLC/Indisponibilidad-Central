@@ -1,16 +1,46 @@
 <div class="sidebar-wrapper">
   <div class="sidebar-section-label">MENÚ PRINCIPAL</div>
   <nav class="sidebar-nav">
-    @for (item of navItems; track item.route) {
-      <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
-        <div class="nav-icon-wrap">
-          <mat-icon>{{ item.icon }}</mat-icon>
+    @for (item of navItems; track item.label) {
+
+      @if (item.children) {
+        <!-- Grupo con sub-items -->
+        <div class="nav-group" [class.group-active]="isGroupActive(item)"
+          [class.group-expanded]="expandedGroup === item.label">
+          <a class="nav-item" (click)="toggleGroup(item.label)"
+            [class.active]="isGroupActive(item)">
+            <div class="nav-icon-wrap">
+              <mat-icon>{{ item.icon }}</mat-icon>
+            </div>
+            <span class="nav-label">{{ item.label }}</span>
+            <mat-icon class="expand-icon">
+              {{ expandedGroup === item.label ? 'expand_less' : 'expand_more' }}
+            </mat-icon>
+          </a>
+          @if (expandedGroup === item.label || isGroupActive(item)) {
+            <div class="nav-children">
+              @for (child of item.children; track child.route) {
+                <a class="nav-item nav-child" [routerLink]="child.route" routerLinkActive="active">
+                  <mat-icon class="child-icon">{{ child.icon }}</mat-icon>
+                  <span class="nav-label">{{ child.label }}</span>
+                </a>
+              }
+            </div>
+          }
         </div>
-        <span class="nav-label">{{ item.label }}</span>
-        @if (item.badge) {
-          <span class="nav-badge">{{ item.badge }}</span>
-        }
-      </a>
+      } @else {
+        <!-- Item simple -->
+        <a class="nav-item" [routerLink]="item.route" routerLinkActive="active">
+          <div class="nav-icon-wrap">
+            <mat-icon>{{ item.icon }}</mat-icon>
+          </div>
+          <span class="nav-label">{{ item.label }}</span>
+          @if (item.badge) {
+            <span class="nav-badge">{{ item.badge }}</span>
+          }
+        </a>
+      }
+
     }
   </nav>
 

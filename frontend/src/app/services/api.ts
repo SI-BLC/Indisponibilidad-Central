@@ -257,4 +257,20 @@ export class ApiService {
   eliminarComentario(idCentral: number, fecha: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/comentarios/${idCentral}/${fecha}`);
   }
+
+  // Cortes manuales
+  insertarCorteManual(body: { id_enlace: number; fecha_inicio: string; fecha_fin: string }): Observable<any> {
+    return this.http.post(`${this.base}/cortes-manuales/`, body);
+  }
+
+  listarCortesManuales(idEnlace?: number, fecha?: string): Observable<any[]> {
+    let params = new HttpParams();
+    if (idEnlace) params = params.set('id_enlace', idEnlace);
+    if (fecha) params = params.set('fecha', fecha);
+    return this.http.get<any[]>(`${this.base}/cortes-manuales/`, { params });
+  }
+
+  eliminarCorteManual(idCon: number): Observable<any> {
+    return this.http.delete(`${this.base}/cortes-manuales/${idCon}`);
+  }
 }

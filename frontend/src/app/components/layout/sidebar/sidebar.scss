@@ -89,6 +89,44 @@
 
 .nav-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+// ── Grupos con sub-items ──
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.expand-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: #3f4460;
+  transition: color .15s ease;
+}
+
+.nav-children {
+  display: flex;
+  flex-direction: column;
+  padding-left: 16px;
+  gap: 1px;
+}
+
+.nav-child {
+  padding: 7px 12px !important;
+  font-size: .8rem !important;
+  gap: 8px !important;
+
+  .child-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: #3f4460;
+    transition: color .15s ease;
+  }
+
+  &.active .child-icon { color: #539bff; }
+  &:hover .child-icon { color: #539bff; }
+}
+
 .nav-badge {
   background: rgba(83,155,255,.15);
   color: #539bff;

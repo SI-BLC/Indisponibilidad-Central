@@ -1,0 +1,104 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Cortes Manuales</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">
+        Insertar registros de conexión (i+/e+) manualmente para corregir inconsistencias
+      </p>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="form-panel">
+    <div class="panel-title"><mat-icon>edit_note</mat-icon> Insertar corte</div>
+    <p class="form-help text-muted">
+      Insertá la hora de inicio (desconexión i+) y fin (establecimiento e+) del corte.
+      Luego recalculá el día desde la page de Cálculos para que se refleje en los resultados.
+    </p>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Central</mat-label>
+        <input matInput [formControl]="searchCentral"
+          [matAutocomplete]="autoCentral" placeholder="Buscar central..." />
+        <mat-autocomplete #autoCentral="matAutocomplete"
+          [displayWith]="displayCentral"
+          (optionSelected)="onCentralSelected($event)">
+          @for (c of filteredCentrales(); track c.id) {
+            <mat-option [value]="c">{{ c.nemo }}</mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Enlace</mat-label>
+        <mat-select formControlName="idEnlace" (selectionChange)="onEnlaceChange($event.value)">
+          @for (e of enlaces(); track e.id) {
+            <mat-option [value]="e.id">{{ e.nombre }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Inicio del corte (i+)</mat-label>
+        <input matInput type="datetime-local" formControlName="fechaInicio" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fin del corte (e+)</mat-label>
+        <input matInput type="datetime-local" formControlName="fechaFin" />
+      </mat-form-field>
+
+      <div class="form-submit">
+        <button mat-flat-button color="primary" type="submit"
+          [disabled]="form.invalid || guardando()">
+          @if (guardando()) {
+            <mat-spinner diameter="16" />
+          } @else {
+            <mat-icon>add</mat-icon>
+          }
+          Insertar corte
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Historial -->
+  @if (historial().length > 0) {
+    <div class="table-panel">
+      <div class="table-header">
+        <span class="section-title" style="margin:0">Registros manuales insertados</span>
+        <span class="badge badge-muted">{{ historial().length }}</span>
+      </div>
+      <table mat-table [dataSource]="historial()">
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>FECHA</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="mono">{{ formatFecha(r.fecha) }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>TIPO</th>
+          <td mat-cell *matCellDef="let r">
+            <span class="badge" [ngClass]="tipoBadge(r.tipo)">{{ tipoLabel(r.tipo) }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="enlace">
+          <th mat-header-cell *matHeaderCellDef>ENLACE</th>
+          <td mat-cell *matCellDef="let r">{{ r.enlace_nombre }}</td>
+        </ng-container>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let r">
+            <button mat-icon-button (click)="eliminar(r.id)" class="delete-btn"
+              aria-label="Eliminar" matTooltip="Eliminar registro manual">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columns"></tr>
+        <tr mat-row *matRowDef="let r; columns: columns;"></tr>
+      </table>
+    </div>
+  }
+</div>
