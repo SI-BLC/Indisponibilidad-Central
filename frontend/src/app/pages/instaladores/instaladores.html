@@ -1,0 +1,185 @@
+<div class="page-header">
+  <h2 class="page-title">
+    <mat-icon>security</mat-icon>
+    Generador de Instaladores
+  </h2>
+</div>
+
+<!-- Form -->
+<div class="panel">
+  <div class="panel-title"><mat-icon>assignment</mat-icon> Datos de la planta</div>
+
+  <form [formGroup]="form" (ngSubmit)="generar()" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Planta (base)</mat-label>
+      <input matInput formControlName="planta_base" placeholder="ej: lom1">
+      <mat-hint>Minúsculas y números. Autocompleta los hostnames.</mat-hint>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre de Central</mat-label>
+      <input matInput formControlName="central_nombre" placeholder="ej: LOMA DE LA LATA">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Protocolo</mat-label>
+      <mat-select formControlName="protocolo">
+        <mat-option value="ELCOM">ELCOM</mat-option>
+        <mat-option value="ICCP">ICCP</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="section-divider">
+      <span class="divider-label">SOTR A</span>
+      <span class="divider-hint">(al menos una IP requerida)</span>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hostname SOTR A</mat-label>
+      <input matInput formControlName="hostname_sotra" placeholder="ej: lom1sotra">
+      <mat-hint>Se usa para CN del certificado, usuario MySQL y conf.db</mat-hint>
+    </mat-form-field>
+
+    <div class="ip-row">
+      <mat-form-field appearance="outline">
+        <mat-label>IP VPN (SOTR A)</mat-label>
+        <input matInput formControlName="ip_vpn_sotra" placeholder="10.x.x.x">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>IP MPLS (SOTR A)</mat-label>
+        <input matInput formControlName="ip_mpls_sotra" placeholder="172.16.x.x">
+      </mat-form-field>
+    </div>
+
+    <div class="section-divider">
+      <span class="divider-label">SOTR B</span>
+      <span class="divider-hint">(opcional — dejar IPs vacías si no hay segundo SOTR)</span>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hostname SOTR B</mat-label>
+      <input matInput formControlName="hostname_sotrb" placeholder="ej: lom1sotrb">
+      <mat-hint>Se activa automáticamente al ingresar una IP de SOTR B</mat-hint>
+    </mat-form-field>
+
+    <div class="ip-row">
+      <mat-form-field appearance="outline">
+        <mat-label>IP VPN (SOTR B)</mat-label>
+        <input matInput formControlName="ip_vpn_sotrb" placeholder="10.x.x.x">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>IP MPLS (SOTR B)</mat-label>
+        <input matInput formControlName="ip_mpls_sotrb" placeholder="172.16.x.x">
+      </mat-form-field>
+    </div>
+
+    <div class="form-actions">
+      <button mat-raised-button color="primary" type="submit"
+              [disabled]="!formValido || generando()">
+        @if (generando()) {
+          <mat-icon>hourglass_top</mat-icon>
+        } @else {
+          <mat-icon>build_circle</mat-icon>
+        }
+        {{ generando() ? 'Generando...' : (sotrBActivo ? 'Generar 2 Instaladores' : 'Generar 1 Instalador') }}
+      </button>
+      <button mat-stroked-button type="button" (click)="limpiar()" [disabled]="generando()">Limpiar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Progress -->
+@if (progreso(); as p) {
+  <div class="panel progress-panel">
+    <div class="panel-title"><mat-icon>sync</mat-icon> Progreso</div>
+    <div class="progress-message">{{ p.message }}</div>
+    <mat-progress-bar mode="determinate" [value]="(p.step / p.total) * 100"></mat-progress-bar>
+    <div class="progress-counter">Paso {{ p.step }} de {{ p.total }}</div>
+  </div>
+}
+
+<!-- Resultado -->
+@if (resultado(); as res) {
+  <div class="panel resultado-panel">
+    <div class="panel-title success-title"><mat-icon>check_circle</mat-icon> Generación completada — {{ res.planta }}</div>
+
+    <div class="result-grid">
+      @for (key of sotrKeys; track key) {
+        <div class="result-card">
+          <div class="result-card-header">{{ key === 'sotra' ? 'SOTR A' : 'SOTR B' }}</div>
+          <div class="result-field"><span class="rf-label">CN</span><span class="rf-value mono">{{ res.certificados[key].cn }}</span></div>
+          <div class="result-field"><span class="rf-label">Thumbprint</span><span class="rf-value mono">{{ res.certificados[key].thumbprint }}</span></div>
+          <div class="result-field"><span class="rf-label">Validez</span><span class="rf-value">{{ res.certificados[key].valid }}</span></div>
+          <div class="result-field"><span class="rf-label">PFX Pass</span><span class="rf-value mono">{{ res.certificados[key].pfx_password }}</span></div>
+          @if (res.instaladores[key]) {
+            <div class="result-field download-row">
+              <span class="rf-label">Instalador</span>
+              <button mat-raised-button color="primary" class="download-btn" (click)="descargar(key)">
+                <mat-icon>download</mat-icon>
+                {{ res.instaladores[key].filename }} ({{ formatSize(res.instaladores[key].size_bytes) }})
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (res.mysql_users['error']) {
+      <div class="alert-mysql">
+        <mat-icon>warning</mat-icon>
+        <span>MySQL: {{ res.mysql_users['error'] }}</span>
+      </div>
+    } @else {
+      <div class="mysql-ok">
+        <mat-icon>storage</mat-icon>
+        Usuarios MySQL creados:
+        @for (key of sotrKeys; track key) {
+          {{ res.mysql_users[key]?.user }}{{ $last ? '' : ', ' }}
+        }
+      </div>
+    }
+  </div>
+}
+
+<!-- Historial -->
+@if (historial().length) {
+  <div class="panel">
+    <div class="panel-title"><mat-icon>history</mat-icon> Historial de generaciones</div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Planta</th>
+            <th>Central</th>
+            <th>Protocolo</th>
+            <th>SOTR A</th>
+            <th>SOTR B</th>
+            <th>Usuario</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (h of historial(); track h.id) {
+            <tr>
+              <td class="mono">{{ h.planta_base }}</td>
+              <td>{{ h.central_nombre }}</td>
+              <td><span class="badge-proto">{{ h.protocolo }}</span></td>
+              <td class="mono">{{ h.sotra_cn }}</td>
+              <td class="mono">{{ h.sotrb_cn || '—' }}</td>
+              <td>{{ h.usuario }}</td>
+              <td class="mono">{{ h.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <button mat-icon-button class="delete-btn" (click)="eliminar(h.planta_base)" title="Eliminar para regenerar">
+                  <mat-icon>delete_outline</mat-icon>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

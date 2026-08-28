@@ -35,6 +35,7 @@ export class Sidebar {
     },
     { label: 'Cálculos', icon: 'calculate', route: '/calculos' },
     { label: 'Carga Manual', icon: 'upload', route: '/carga-manual' },
+    { label: 'Instaladores', icon: 'security', route: '/instaladores' },
   ];
 
   expandedGroup: string | null = null;

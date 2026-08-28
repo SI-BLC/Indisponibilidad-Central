@@ -92,5 +92,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/carga-manual/carga-manual').then((m) => m.CargaManual),
   },
+  {
+    path: 'instaladores',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/instaladores/instaladores').then((m) => m.Instaladores),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];

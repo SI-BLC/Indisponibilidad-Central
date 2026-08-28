@@ -242,20 +242,25 @@ export class ApiService {
   }
 
   // Comentarios
-  getComentario(idCentral: number, fecha: string): Observable<Comentario | null> {
-    return this.http.get<Comentario | null>(`${this.base}/comentarios/${idCentral}/${fecha}`);
+  listarComentarios(idCentral: number, fechaDia: string, tipo?: string): Observable<Comentario[]> {
+    let params = new HttpParams().set('id_central', idCentral).set('fecha_dia', fechaDia);
+    if (tipo) params = params.set('tipo', tipo);
+    return this.http.get<Comentario[]>(`${this.base}/comentarios/`, { params });
   }
 
-  crearComentario(idCentral: number, fecha: string, texto: string): Observable<Comentario> {
-    return this.http.post<Comentario>(`${this.base}/comentarios/${idCentral}/${fecha}`, { texto });
+  crearComentario(body: {
+    id_central: number; fecha_dia: string; tipo: string;
+    fecha_inicio: string; fecha_fin: string; texto: string;
+  }): Observable<Comentario> {
+    return this.http.post<Comentario>(`${this.base}/comentarios/`, body);
   }
 
-  actualizarComentario(idCentral: number, fecha: string, texto: string): Observable<Comentario> {
-    return this.http.put<Comentario>(`${this.base}/comentarios/${idCentral}/${fecha}`, { texto });
+  actualizarComentario(id: number, texto: string): Observable<Comentario> {
+    return this.http.put<Comentario>(`${this.base}/comentarios/${id}`, { texto });
   }
 
-  eliminarComentario(idCentral: number, fecha: string): Observable<void> {
-    return this.http.delete<void>(`${this.base}/comentarios/${idCentral}/${fecha}`);
+  eliminarComentario(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/comentarios/${id}`);
   }
 
   // Cortes manuales
@@ -272,5 +277,75 @@ export class ApiService {
 
   eliminarCorteManual(idCon: number): Observable<any> {
     return this.http.delete(`${this.base}/cortes-manuales/${idCon}`);
+  }
+
+  // ── Instaladores ────────────────────────────────────────────────────────────
+
+  checkPlantaInstalador(planta: string): Observable<any> {
+    return this.http.get(`${this.base}/instaladores/check/${planta}`);
+  }
+
+  generarInstaladoresSSE(
+    data: Record<string, any>,
+    callbacks: {
+      onProgress: (p: { step: number; total: number; message: string }) => void;
+      onDone: (r: any) => void;
+      onError: (msg: string) => void;
+    },
+  ) {
+    const token = localStorage.getItem('auth_token') || '';
+    fetch(`${this.base}/instaladores/generar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    }).then(async (response) => {
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: response.statusText }));
+        callbacks.onError(err.detail || 'Error al generar');
+        return;
+      }
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let boundary = buffer.lastIndexOf('\n\n');
+        if (boundary === -1) continue;
+        const chunk = buffer.substring(0, boundary + 2);
+        buffer = buffer.substring(boundary + 2);
+
+        for (const block of chunk.split('\n\n').filter(Boolean)) {
+          const lines = block.split('\n');
+          let event = '';
+          let dataStr = '';
+          for (const line of lines) {
+            if (line.startsWith('event: ')) event = line.substring(7);
+            if (line.startsWith('data: ')) dataStr = line.substring(6);
+          }
+          if (!event || !dataStr) continue;
+          const parsed = JSON.parse(dataStr);
+          if (event === 'progress') callbacks.onProgress(parsed);
+          else if (event === 'done') callbacks.onDone(parsed);
+          else if (event === 'error') callbacks.onError(parsed.message);
+        }
+      }
+    }).catch((err) => {
+      callbacks.onError('Error de conexión: ' + err.message);
+    });
+  }
+
+  historialInstaladores(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.base}/instaladores/historial`);
+  }
+
+  eliminarPlantaInstalador(planta: string): Observable<any> {
+    return this.http.delete(`${this.base}/instaladores/eliminar/${planta}`);
   }
 }

@@ -22,6 +22,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_HOURS: int = 8
 
+    # Cert-Helper
+    CERT_HELPER_URL: str = "http://10.230.2.115:8500"
+    CERT_HELPER_TOKEN: str = "BLC-CertHelper-2026"
+
+    # MySQL admin (for creating node users)
+    MYSQL_ADMIN_HOST: str = "localhost"
+    MYSQL_ADMIN_USER: str = "root"
+    MYSQL_ADMIN_PASSWORD: str = ""
+
     model_config = {"env_file": ".env"}
 
 

@@ -13,7 +13,7 @@ def _patched_mp_init(self, *args, **kwargs):
     kwargs.setdefault("max_fields", 10000)
     _orig_mp_init(self, *args, **kwargs)
 MultiPartParser.__init__ = _patched_mp_init
-from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets, cortes_manuales
+from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets, cortes_manuales, instaladores
 from routers import auth
 from config import settings
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -107,6 +107,27 @@ async def lifespan(app: FastAPI):
     finally:
         _db3.close()
 
+    _db4 = SessionLocal()
+    try:
+        _db4.execute(_text("""
+            CREATE TABLE IF NOT EXISTS instalaciones_log (
+                id              INT AUTO_INCREMENT PRIMARY KEY,
+                planta_base     VARCHAR(50) NOT NULL,
+                central_nombre  VARCHAR(100),
+                protocolo       VARCHAR(10),
+                usuario         VARCHAR(100),
+                sotra_cn        VARCHAR(100),
+                sotrb_cn        VARCHAR(100),
+                created_at      DATETIME NOT NULL,
+                UNIQUE KEY uq_planta (planta_base)
+            )
+        """))
+        _db4.commit()
+    except Exception:
+        pass
+    finally:
+        _db4.close()
+
     scheduler.add_job(
         _job_guardar_resultados,
         CronTrigger(hour=0, minute=30),
@@ -180,6 +201,7 @@ app.include_router(carga_manual.router)
 app.include_router(comentarios.router)
 app.include_router(datasets.router)
 app.include_router(cortes_manuales.router)
+app.include_router(instaladores.router)
 
 
 @app.get("/health")
