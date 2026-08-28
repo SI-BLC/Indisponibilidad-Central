@@ -124,7 +124,7 @@ OID=1.3.6.1.5.5.7.3.2
 {san_block}"""
 
 
-def _build_conf_db(hostname: str, central: str, protocolo: str) -> str:
+def _build_conf_db(hostname: str, sotr_label: str, planta: str, protocolo: str) -> str:
     template_path = SERVICE_DIR / "conf.db"
     out_path = OUTPUT_DIR / f"conf_{hostname}.db"
     shutil.copy2(template_path, out_path)
@@ -132,7 +132,7 @@ def _build_conf_db(hostname: str, central: str, protocolo: str) -> str:
     conn = sqlite3.connect(str(out_path))
     c = conn.cursor()
     c.execute("UPDATE general SET host=?, central=?, protocolo=? WHERE id=1",
-              (hostname.upper(), central, protocolo.lower()))
+              (sotr_label.upper(), planta.upper(), protocolo.lower()))
     c.execute("UPDATE mysql SET user=?, pass='' WHERE id=1", (hostname,))
     conn.commit()
     conn.close()
@@ -290,7 +290,7 @@ async def generar_instaladores(req: InstaladorRequest, request: Request, db: Ses
                     "step": step, "total": total_steps,
                     "message": f"Compilando instalador {label} ({hostname})...",
                 })
-                conf_db = _build_conf_db(hostname, req.central_nombre, req.protocolo)
+                conf_db = _build_conf_db(hostname, sotr, req.planta_base, req.protocolo)
                 compiled = await _compilar_instalador(
                     hostname, cert["pfx_base64"], cert["pfx_password"], conf_db,
                 )
