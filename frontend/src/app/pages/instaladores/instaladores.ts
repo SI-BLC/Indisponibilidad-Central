@@ -186,7 +186,7 @@ export class Instaladores {
     const filename = `BLC_NODE_${res.planta.toUpperCase()}_${sotr.toUpperCase()}.exe`;
     const token = localStorage.getItem('auth_token') || '';
 
-    fetch(`https://10.230.90.220/instaladores/descargar/${res.planta}/${sotr}`, {
+    fetch(`https://10.230.90.220/api/instaladores/descargar/${res.planta}/${sotr}`, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then(r => {

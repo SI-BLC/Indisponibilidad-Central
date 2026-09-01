@@ -12,7 +12,7 @@ import { Comentario } from '../models/comentario';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly base = 'https://10.230.90.220';
+  private readonly base = 'https://10.230.90.220/api';
 
   // Centrales
   getCentrales(): Observable<Central[]> {
