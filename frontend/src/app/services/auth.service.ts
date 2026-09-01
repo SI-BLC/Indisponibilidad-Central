@@ -19,7 +19,7 @@ export interface UserInfo {
 export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
   private readonly USER_KEY = 'auth_user';
-  private readonly base = 'http://10.230.90.220:8000';
+  private readonly base = 'https://10.230.90.220';
 
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
