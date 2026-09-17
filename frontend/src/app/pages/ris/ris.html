@@ -1,0 +1,515 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reporte de Indisponibilidad de Soporte</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">RIS mensual por central</p>
+    </div>
+  </div>
+
+  <!-- Selector -->
+  <div class="selector-row">
+    <mat-form-field appearance="outline" class="central-field">
+      <mat-label>Central</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="searchControl"
+        [matAutocomplete]="autoCentral"
+        placeholder="Buscar central..." />
+      <mat-autocomplete #autoCentral="matAutocomplete"
+        [displayWith]="displayCentral"
+        (optionSelected)="onCentralSelected($event)">
+        @for (c of filteredCentrales(); track c.id) {
+          <mat-option [value]="c">
+            <span style="font-weight:700;margin-right:8px">{{ c.nemo }}</span>
+            <span style="color:#7c839d;font-size:.8rem">{{ tipoLabels[c.tipo] }}</span>
+          </mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" style="width:180px">
+      <mat-label>Mes</mat-label>
+      <mat-select [(value)]="mesSeleccionado" (selectionChange)="onMesChange()">
+        @for (m of mesesDisponibles(); track m) {
+          <mat-option [value]="m">{{ formatMes(m) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-center"><mat-spinner diameter="40"></mat-spinner></div>
+  }
+
+  @if (ris(); as r) {
+    <!-- Header central -->
+    <div class="central-header">
+      <div class="ch-nemo">{{ r.central.nemo }}</div>
+      @if (r.central.nemo_cammesa) {
+        <span class="ch-badge">{{ r.central.nemo_cammesa }}</span>
+      }
+      @if (r.central.cliente) {
+        <span class="ch-cliente">{{ r.central.cliente }}</span>
+      }
+      <span class="ch-tipo tipo-{{ r.central.tipo }}">{{ tipoLabels[r.central.tipo] }}</span>
+      <span class="ch-pem">PEM: {{ r.central.pem }}</span>
+      @if (r.central.inicio_penalidad) {
+        <span class="ch-pem">Penalidad: {{ r.central.inicio_penalidad }}</span>
+      }
+    </div>
+
+    <!-- Dashboard KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card kpi-featured">
+        <div class="kpi-label">Ind. Mensual</div>
+        <div class="kpi-val kpi-big" [class]="pctClass(r.resumen_mes.ind_pct)">{{ formatPct2(r.resumen_mes.ind_pct) }}</div>
+        <div class="kpi-sub">{{ formatSeg(r.resumen_mes.ind_total_seg) }} seg / {{ r.resumen_mes.seg_totales | number:'1.0-0' }} seg</div>
+      </div>
+      <div class="kpi-card kpi-featured">
+        <div class="kpi-label">Año Móvil</div>
+        <div class="kpi-val kpi-big" [class]="pctClass(r.anio_movil.ind_pct)">{{ formatPct2(r.anio_movil.ind_pct) }}</div>
+        <div class="kpi-sub">{{ r.anio_movil.meses_con_datos }} meses con datos</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Meses > 0.5%</div>
+        <div class="kpi-val" [class]="r.anio_movil.meses_sobre_umbral > 0 ? 'val-red' : 'val-green'">
+          {{ r.anio_movil.meses_sobre_umbral }}
+        </div>
+        <div class="kpi-sub">en año móvil</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Cortes</div>
+        <div class="kpi-val val-orange">{{ formatSeg(r.resumen_mes.ind_cortes_seg) }}<span class="kpi-unit">seg</span></div>
+        <div class="kpi-sub">{{ formatPct(r.resumen_mes.ind_cortes_pct) }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Datos Inv.</div>
+        <div class="kpi-val val-orange">{{ formatSeg(r.resumen_mes.ind_datos_seg) }}<span class="kpi-unit">seg</span></div>
+        <div class="kpi-sub">{{ formatPct(r.resumen_mes.ind_datos_pct) }}</div>
+      </div>
+    </div>
+
+    <!-- Gráfico Diario + Pie Mes -->
+    <div class="charts-row">
+      <div class="panel chart-panel-bar">
+        <div class="panel-title"><mat-icon>bar_chart</mat-icon> Indisponibilidad Diaria — {{ formatMes(r.mes) }}</div>
+        <div class="chart-container">
+          <canvas baseChart
+            [data]="chartDiarioData()"
+            [options]="chartDiarioOpts"
+            type="bar">
+          </canvas>
+        </div>
+      </div>
+      <div class="panel chart-panel-pie">
+        <div class="panel-title"><mat-icon>pie_chart</mat-icon> Distribución del Mes</div>
+        <div class="chart-container-pie">
+          <canvas baseChart
+            [data]="pieMesData()"
+            [options]="pieMesOpts"
+            type="pie">
+          </canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico Año Móvil + Pie Año Móvil -->
+    @if (r.anio_movil.detalle && r.anio_movil.detalle.length > 0) {
+      <div class="charts-row">
+        <div class="panel chart-panel-bar">
+          <div class="panel-title"><mat-icon>trending_up</mat-icon> Año Móvil — Indisponibilidad Mensual (%)</div>
+          <div class="chart-container chart-historico">
+            <canvas baseChart
+              [data]="chartAnioMovilData()"
+              [options]="chartAnioMovilOpts"
+              type="bar">
+            </canvas>
+          </div>
+        </div>
+        <div class="panel chart-panel-pie">
+          <div class="panel-title"><mat-icon>pie_chart</mat-icon> Distribución del Año Móvil</div>
+          <div class="chart-container-pie">
+            <canvas baseChart
+              [data]="pieAnioMovilData()"
+              [options]="pieAnioMovilOpts"
+              type="pie">
+            </canvas>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Sección: Indisponibilidad Total -->
+    <div class="seccion-grupo">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo">INDISPONIBILIDAD TOTAL</h2>
+        <p class="seccion-subtitulo">CALIDAD DE DATOS + CORTES DE COMUNICACIÓN</p>
+      </div>
+
+    <!-- Resumen del mes -->
+    <div class="panel resumen-panel">
+      <div class="panel-title"><mat-icon>summarize</mat-icon> Tabla 1: Indisponibilidad Total del Mes</div>
+      <div class="resumen-fila-top">
+        <div class="resumen-item">
+          <span class="resumen-label">Central</span>
+          <span class="resumen-val">{{ r.central.nemo }}</span>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-label">Período</span>
+          <span class="resumen-val mono">{{ formatMes(r.mes) }}</span>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-label">Seg. Totales del Mes</span>
+          <span class="resumen-val mono">{{ r.resumen_mes.seg_totales | number:'1.0-0' }}</span>
+        </div>
+      </div>
+      <div class="resumen-lista">
+        <div class="resumen-item">
+          <span class="resumen-label">Ind. Cortes</span>
+          <span class="resumen-val mono">{{ formatSeg(r.resumen_mes.ind_cortes_seg) }} seg ({{ formatPct(r.resumen_mes.ind_cortes_pct) }})</span>
+        </div>
+        <div class="resumen-item">
+          <span class="resumen-label">Ind. Datos Inválidos</span>
+          <span class="resumen-val mono">{{ formatSeg(r.resumen_mes.ind_datos_seg) }} seg ({{ formatPct(r.resumen_mes.ind_datos_pct) }})</span>
+        </div>
+        <div class="resumen-item resumen-total">
+          <span class="resumen-label">Ind. Total</span>
+          <span class="resumen-val mono" [class]="pctClass(r.resumen_mes.ind_pct)">{{ formatSeg(r.resumen_mes.ind_total_seg) }} seg ({{ formatPct(r.resumen_mes.ind_pct) }})</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Texto explicativo (Output02) -->
+    <div class="nota-texto">
+      <p>La figura y la tabla 1 muestran la indisponibilidad correspondiente al mes corriente. Si dicho valor supera el 0,5%, se comenzará a penalizar.</p>
+      <p>Ver <strong>Nota 1</strong> del ANEXO para detalles sobre el enlace en el cual se mide la indisponibilidad.</p>
+    </div>
+
+    <!-- Tabla 2: Cortes del mes (observaciones) — Output02 -->
+    <div class="panel">
+      <div class="panel-title"><mat-icon>flash_on</mat-icon> Tabla 2: Cortes de enlace del mes</div>
+      @if (r.observaciones.cortes.length > 0) {
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha Inicio</th>
+                <th>Fecha Fin</th>
+                <th>Suceso</th>
+                <th style="text-align:right">Duración</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of r.observaciones.cortes; track c.fecha_inicio + c.texto) {
+                <tr>
+                  <td class="mono">{{ formatDatetime(c.fecha_inicio) }}</td>
+                  <td class="mono">{{ formatDatetime(c.fecha_fin) }}</td>
+                  <td class="mono">Med Ind</td>
+                  <td class="mono" style="text-align:right">{{ formatSeg(c.duracion_seg) }} seg</td>
+                  <td>{{ c.texto }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="no-data-msg">No se registraron cortes relevantes de enlace en el período considerado.</p>
+      }
+    </div>
+
+    <!-- Tabla 3: Datos inválidos del mes (observaciones) — Output03 -->
+    <div class="panel">
+      <div class="panel-title"><mat-icon>error_outline</mat-icon> Tabla 3: Datos inválidos del mes</div>
+      @if (r.observaciones.datos.length > 0) {
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th style="text-align:right">Duración</th>
+                <th style="text-align:right">%</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of r.observaciones.datos; track d.fecha + d.texto) {
+                <tr>
+                  <td class="mono">{{ formatFecha(d.fecha) }}</td>
+                  <td class="mono" style="text-align:right">{{ formatSeg(d.duracion_seg) }} seg</td>
+                  <td class="mono" style="text-align:right">{{ formatPct(d.pct) }}</td>
+                  <td>{{ d.texto }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="no-data-msg">No se registraron datos inválidos relevantes de enlace en el período considerado.</p>
+      }
+    </div>
+
+    <!-- Tabla 4: Grilla compacta Año Móvil [%] — Output03 -->
+    @if (r.anio_movil.detalle && r.anio_movil.detalle.length > 0) {
+      <div class="panel">
+        <div class="panel-title"><mat-icon>grid_on</mat-icon> Indisponibilidad Mensual Móvil [%]</div>
+        <div class="grid-movil-layout">
+          <div class="grid-movil-nemo">{{ r.central.nemo }}</div>
+          <div class="grid-movil-tabla">
+            <table class="data-table grid-compacta">
+              <thead>
+                <tr>
+                  @for (d of r.anio_movil.detalle.slice(0, 6); track d.mes) {
+                    <th style="text-align:center">{{ formatMesCorto(d.mes) }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  @for (d of r.anio_movil.detalle.slice(0, 6); track d.mes) {
+                    <td class="mono" style="text-align:center" [class]="pctClass(d.ind_pct)">{{ formatPct2(d.ind_pct) }}</td>
+                  }
+                </tr>
+              </tbody>
+            </table>
+            @if (r.anio_movil.detalle.length > 6) {
+              <table class="data-table grid-compacta" style="margin-top:6px">
+                <thead>
+                  <tr>
+                    @for (d of r.anio_movil.detalle.slice(6); track d.mes) {
+                      <th style="text-align:center">{{ formatMesCorto(d.mes) }}</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    @for (d of r.anio_movil.detalle.slice(6); track d.mes) {
+                      <td class="mono" style="text-align:center" [class]="pctClass(d.ind_pct)">{{ formatPct2(d.ind_pct) }}</td>
+                    }
+                  </tr>
+                </tbody>
+              </table>
+            }
+          </div>
+        </div>
+        <p class="tabla-caption">Tabla 4: Indisponibilidad Mensual - Año móvil</p>
+      </div>
+    }
+
+    <!-- ANEXO -->
+    <div class="panel anexo-panel">
+      <div class="anexo-header">ANEXO</div>
+      <div class="anexo-content">
+        <div class="anexo-nota">
+          <strong>NOTA 1:</strong>
+          <p>El reporte de indisponibilidad se obtiene de analizar el enlace elcom90 entre cada una de las centrales y CAMMESA. El enlace en cuestión es un vínculo directo con CAMMESA. Considerar que los microcortes menores a los 2 minutos no se reflejan en el reporte.</p>
+        </div>
+        <div class="anexo-nota">
+          <strong>NOTA 2:</strong>
+          <p>La calidad de datos hace referencia a si la información enviada se está tomando correctamente de los dispositivos de campo. Un valor con calificador inválido o un dato colocado en modo manual generan indisponibilidad.</p>
+        </div>
+      </div>
+    </div>
+
+    </div><!-- /seccion-grupo -->
+
+    <!-- Tabla detalle: Indisponibilidad Mensual — Año Móvil (extendida) -->
+    @if (r.anio_movil.detalle && r.anio_movil.detalle.length > 0) {
+      <div class="panel">
+        <div class="panel-title"><mat-icon>date_range</mat-icon> Detalle Año Móvil</div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Mes</th>
+                <th style="text-align:right">Cortes (seg)</th>
+                <th style="text-align:right">Datos (seg)</th>
+                <th style="text-align:right">Total (seg)</th>
+                <th style="text-align:right">Cortes %</th>
+                <th style="text-align:right">Datos %</th>
+                <th style="text-align:right">Total %</th>
+                <th style="text-align:right">Acum. %</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of r.anio_movil.detalle; track d.mes) {
+                <tr [class.row-highlight]="d.mes === r.mes">
+                  <td class="mono">{{ formatMes(d.mes) }}</td>
+                  <td class="mono" style="text-align:right">{{ formatSeg(d.ind_cortes_seg) }}</td>
+                  <td class="mono" style="text-align:right">{{ formatSeg(d.ind_datos_seg) }}</td>
+                  <td class="mono" style="text-align:right" [class]="d.ind_total_seg > 0 ? 'val-red' : ''">{{ formatSeg(d.ind_total_seg) }}</td>
+                  <td class="mono" style="text-align:right">{{ formatPct(d.ind_cortes_pct) }}</td>
+                  <td class="mono" style="text-align:right">{{ formatPct(d.ind_datos_pct) }}</td>
+                  <td class="mono" style="text-align:right" [class]="pctClass(d.ind_pct)">{{ formatPct(d.ind_pct) }}</td>
+                  <td class="mono" style="text-align:right" [class]="pctClass(d.ind_acum_pct)">{{ formatPct(d.ind_acum_pct) }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td><strong>Total</strong></td>
+                <td class="mono" style="text-align:right"><strong>{{ formatSeg(r.anio_movil.ind_cortes_seg) }}</strong></td>
+                <td class="mono" style="text-align:right"><strong>{{ formatSeg(r.anio_movil.ind_datos_seg) }}</strong></td>
+                <td class="mono" style="text-align:right"><strong>{{ formatSeg(r.anio_movil.ind_total_seg) }}</strong></td>
+                <td colspan="3"></td>
+                <td class="mono" style="text-align:right" [class]="pctClass(r.anio_movil.ind_pct)"><strong>{{ formatPct(r.anio_movil.ind_pct) }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- Histórico completo (desde PEM) -->
+    @if (r.historico.length > 0) {
+      <div class="panel">
+        <div class="panel-title"><mat-icon>calendar_month</mat-icon> Histórico Mensual (desde PEM)</div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Mes</th>
+                <th style="text-align:right">Cortes (seg)</th>
+                <th style="text-align:right">Datos (seg)</th>
+                <th style="text-align:right">Total (seg)</th>
+                <th style="text-align:right">Seg. Mes</th>
+                <th style="text-align:right">Ind. %</th>
+                <th style="text-align:right">Acum. 12m %</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (h of r.historico; track h.mes) {
+                <tr [class.row-highlight]="h.mes === r.mes">
+                  <td class="mono">{{ formatMes(h.mes) }}</td>
+                  <td class="mono" style="text-align:right">{{ formatSeg(h.ind_cortes_seg) }}</td>
+                  <td class="mono" style="text-align:right">{{ formatSeg(h.ind_datos_seg) }}</td>
+                  <td class="mono" style="text-align:right" [class]="h.ind_total_seg > 0 ? 'val-red' : ''">{{ formatSeg(h.ind_total_seg) }}</td>
+                  <td class="mono val-muted" style="text-align:right">{{ h.seg_totales | number:'1.0-0' }}</td>
+                  <td class="mono" style="text-align:right" [class]="pctClass(h.ind_pct)">{{ formatPct(h.ind_pct) }}</td>
+                  <td class="mono" style="text-align:right" [class]="pctClass(h.ind_acum_pct)">{{ formatPct(h.ind_acum_pct) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- Diario -->
+    <div class="panel">
+      <div class="panel-title"><mat-icon>view_list</mat-icon> Diario — {{ formatMes(r.mes) }}</div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Día</th>
+              <th style="text-align:right">Cortes (seg)</th>
+              <th style="text-align:right">Datos (seg)</th>
+              <th style="text-align:right">Total (seg)</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of r.diario; track d.fecha) {
+              <tr>
+                <td class="mono">{{ formatFecha(d.fecha) }}</td>
+                <td class="mono" style="text-align:right">{{ formatSeg(d.ind_cortes_seg) }}</td>
+                <td class="mono" style="text-align:right">{{ formatSeg(d.ind_datos_seg) }}</td>
+                <td class="mono" style="text-align:right" [class]="d.ind_total_seg > 0 ? 'val-red' : ''">{{ formatSeg(d.ind_total_seg) }}</td>
+                <td>
+                  @if (d.inconsistencia) {
+                    <span class="badge badge-warning" matTooltip="Requiere revisión">
+                      <mat-icon style="font-size:14px;width:14px;height:14px;vertical-align:middle">warning</mat-icon>
+                    </span>
+                  }
+                  @if (d.dat_estado === 'incompleto') {
+                    <span class="badge badge-muted" matTooltip="Datos incompletos">DAT</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td><strong>Total</strong></td>
+              <td class="mono" style="text-align:right"><strong>{{ formatSeg(r.resumen_mes.ind_cortes_seg) }}</strong></td>
+              <td class="mono" style="text-align:right"><strong>{{ formatSeg(r.resumen_mes.ind_datos_seg) }}</strong></td>
+              <td class="mono" style="text-align:right" [class]="pctClass(r.resumen_mes.ind_pct)"><strong>{{ formatSeg(r.resumen_mes.ind_total_seg) }}</strong></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tablas: Cortes relevantes -->
+    <div class="panel">
+      <div class="panel-title"><mat-icon>flash_on</mat-icon> Cortes Relevantes (> 1000 seg)</div>
+      @if (r.tablas.cortes.length > 0) {
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Enlace</th>
+                <th>Asoc</th>
+                <th>Inicio</th>
+                <th>Fin</th>
+                <th style="text-align:right">Bruta (seg)</th>
+                <th style="text-align:right">Neta (seg)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of r.tablas.cortes; track c.inicio) {
+                <tr>
+                  <td class="mono">{{ formatFecha(c.fecha) }}</td>
+                  <td class="enlace-cell">{{ c.enlace }}</td>
+                  <td class="mono">{{ c.asoc }}</td>
+                  <td class="mono">{{ formatDatetime(c.inicio) }}</td>
+                  <td class="mono">{{ formatDatetime(c.fin) }}</td>
+                  <td class="mono val-muted" style="text-align:right">{{ formatSeg(c.ind_bruta_seg) }}</td>
+                  <td class="mono val-red" style="text-align:right">{{ formatSeg(c.ind_neta_seg) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="no-data-msg">No se registraron cortes relevantes en el período.</p>
+      }
+    </div>
+
+    <!-- Tablas: Datos inválidos relevantes -->
+    <div class="panel">
+      <div class="panel-title"><mat-icon>error_outline</mat-icon> Datos Inválidos Relevantes (> 1000 seg)</div>
+      @if (r.tablas.datos.length > 0) {
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Enlace</th>
+                <th style="text-align:right">Ind. Datos (seg)</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of r.tablas.datos; track d.fecha + d.enlace) {
+                <tr>
+                  <td class="mono">{{ formatFecha(d.fecha) }}</td>
+                  <td class="enlace-cell">{{ d.enlace }}</td>
+                  <td class="mono val-red" style="text-align:right">{{ formatSeg(d.ind_datos_seg) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="no-data-msg">No se registraron datos inválidos relevantes en el período.</p>
+      }
+    </div>
+  } @else if (!loading() && !ris()) {
+    <div class="empty-state">
+      <mat-icon>assessment</mat-icon>
+      <p>Seleccioná una central y un mes para generar el RIS</p>
+    </div>
+  }
+</div>

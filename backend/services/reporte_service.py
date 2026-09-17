@@ -1548,17 +1548,13 @@ def _get_enlace_backup_bcog(id_central: int, db: Session) -> int | None:
 
 
 def _calcular_tipo2(
-    id_prim: int, id_bck: int, ini: datetime, fin: datetime, db: Session
-) -> tuple[float, bool]:
+    id_prim: int, id_bck: int, ini: datetime, fin: datetime, db: Session,
+    _enlace_cache: dict[int, tuple] | None = None
+) -> tuple[float, float, float, bool]:
     """
-    Calcula indisponibilidad total para una central Tipo 2 (redundante/failover).
+    Calcula indisponibilidad para una central Tipo 2 (redundante/failover).
 
-    Estrategia:
-    - Corte efectivo = gaps donde ningún enlace cubre (de la línea de tiempo unificada)
-    - Ind. datos = blend proporcional de ind_datos_norm de cada enlace,
-      ponderado por el tiempo que cada uno fue el enlace activo en el día
-
-    Retorna (ind_total_seg, tiene_inconsistencia).
+    Retorna (ind_cortes_seg, ind_datos_seg, ind_total_seg, tiene_inconsistencia).
     """
     tol_c = int(db.execute(text("SELECT tol_cortes FROM configuracion LIMIT 1")).scalar() or 120)
 
@@ -1566,7 +1562,6 @@ def _calcular_tipo2(
         id_prim, id_bck, ini, fin, db
     )
 
-    # Corte efectivo neto: aplica tolerancia a cada gap individual
     corte_ef_seg_neto = sum(max(0.0, c["dur_seg"] - tol_c) for c in cortes_ef)
 
     prim_active = sum(s["dur_seg"] for s in segments if s["estado"] == "prim")
@@ -1579,8 +1574,14 @@ def _calcular_tipo2(
     else:
         prim_frac = bck_frac = 0.0
 
-    _, valores_prim, _ = _procesar_enlace_pd(id_prim, ini, fin, db)
-    _, valores_bck,  _ = _procesar_enlace_pd(id_bck,  ini, fin, db)
+    if _enlace_cache and id_prim in _enlace_cache:
+        _, valores_prim, _ = _enlace_cache[id_prim]
+    else:
+        _, valores_prim, _ = _procesar_enlace_pd(id_prim, ini, fin, db)
+    if _enlace_cache and id_bck in _enlace_cache:
+        _, valores_bck, _ = _enlace_cache[id_bck]
+    else:
+        _, valores_bck,  _ = _procesar_enlace_pd(id_bck,  ini, fin, db)
 
     ind_datos_prim = float(valores_prim.get("ind_datos_norm", 0.0)) if valores_prim else 0.0
     ind_datos_bck  = float(valores_bck.get("ind_datos_norm",  0.0)) if valores_bck  else 0.0
@@ -1588,53 +1589,63 @@ def _calcular_tipo2(
     ind_datos_seg = ind_datos_prim * prim_frac + ind_datos_bck * bck_frac
     ind_total_seg = corte_ef_seg_neto + ind_datos_seg
 
-    return ind_total_seg, len(inconsistencias) > 0
+    return corte_ef_seg_neto, ind_datos_seg, ind_total_seg, len(inconsistencias) > 0
 
 
 def _calcular_ind_central(
-    id_central: int, ini: datetime, fin: datetime, db: Session
-) -> tuple[float | None, bool]:
+    id_central: int, ini: datetime, fin: datetime, db: Session,
+    _enlace_cache: dict[int, tuple] | None = None
+) -> tuple[float | None, float | None, float | None, bool]:
     """
     Dispatcher por tipo de central.
-    Retorna (ind_total_seg, inconsistencia).
-    ind_total_seg=None si no hay datos suficientes.
+    Retorna (ind_cortes_seg, ind_datos_seg, ind_total_seg, inconsistencia).
+    Valores=None si no hay datos suficientes.
     """
+    def _get_enlace(id_e):
+        if _enlace_cache and id_e in _enlace_cache:
+            return _enlace_cache[id_e]
+        return _procesar_enlace_pd(id_e, ini, fin, db)
+
     row = db.execute(
         text("SELECT nemo, tipo FROM centrales WHERE id=:id LIMIT 1"),
         {"id": id_central}
     ).fetchone()
     if not row:
-        return None, False
+        return None, None, None, False
     nemo, tipo = row
 
     if tipo == 1:
         id_e = _get_enlace_directo(id_central, db)
         if not id_e:
-            return None, False
-        _, valores, _ = _procesar_enlace_pd(id_e, ini, fin, db)
+            return None, None, None, False
+        _, valores, _ = _get_enlace(id_e)
         huerfanos = _detectar_eventos_huerfanos(id_e, ini, fin, db)
         if not valores:
-            return 0.0, len(huerfanos) > 0
-        return float(valores.get("ind_total_norm", 0.0)), len(huerfanos) > 0
+            return 0.0, 0.0, 0.0, len(huerfanos) > 0
+        cortes = float(valores.get("promedio_neto", 0.0))
+        datos = float(valores.get("ind_datos_norm", 0.0))
+        return cortes, datos, float(valores.get("ind_total_norm", 0.0)), len(huerfanos) > 0
 
     if tipo == 3:
         id_e = _get_enlace_backup_bcog(id_central, db)
         if not id_e:
-            return None, False
-        _, valores, _ = _procesar_enlace_pd(id_e, ini, fin, db)
+            return None, None, None, False
+        _, valores, _ = _get_enlace(id_e)
         huerfanos = _detectar_eventos_huerfanos(id_e, ini, fin, db)
         if not valores:
-            return 0.0, len(huerfanos) > 0
-        return float(valores.get("ind_total_norm", 0.0)), len(huerfanos) > 0
+            return 0.0, 0.0, 0.0, len(huerfanos) > 0
+        cortes = float(valores.get("promedio_neto", 0.0))
+        datos = float(valores.get("ind_datos_norm", 0.0))
+        return cortes, datos, float(valores.get("ind_total_norm", 0.0)), len(huerfanos) > 0
 
     if tipo == 2:
         id_prim = _get_enlace_directo(id_central, db)
         id_bck  = _get_enlace_backup_bcog(id_central, db)
         if not id_prim or not id_bck:
-            return None, False
-        return _calcular_tipo2(id_prim, id_bck, ini, fin, db)
+            return None, None, None, False
+        return _calcular_tipo2(id_prim, id_bck, ini, fin, db, _enlace_cache)
 
-    return None, False
+    return None, None, None, False
 
 
 # ─── Detalle on-the-fly para la página de detalle ────────────────────────────
@@ -1726,25 +1737,50 @@ def _detalle_central(
             return {"central": nemo, "tipo": tipo, "error": "Enlace no encontrado"}
 
         _, valores, df_cortes = _procesar_enlace_pd(id_e, ini, fin, db)
-        eventos = _eventos_enlace(id_e)
 
         # Construir segmentos de disponibilidad para timeline
+        # Ambas asociaciones (b+c) igual que _procesar_enlace_pd
         prefix = "a" if _es_directo(id_e, db) else "b"
-        col    = f"asoc_{prefix}b"
-        up_ini = _estado_inicial_enlace(id_e, col, ini, db)
-        raw_ev = [(r["t"], r["tipo"]) for r in eventos]
+        col_b = f"asoc_{prefix}b"
+        col_c = f"asoc_{prefix}c"
+
+        def _query_col_events(col):
+            rows = db.execute(
+                text(f"SELECT fecha, {col} FROM con"
+                     f" WHERE id_enlace=:e AND fecha>=:ini AND fecha<=:fin"
+                     f" AND {col} IN ('i+','e+') ORDER BY fecha"),
+                {"e": id_e, "ini": ini, "fin": fin}
+            ).fetchall()
+            return [(r[0], r[1]) for r in rows]
+
+        ev_b = _query_col_events(col_b)
+        ev_c = _query_col_events(col_c)
+        up_ini_b = _estado_inicial_enlace(id_e, col_b, ini, db)
+        up_ini_c = _estado_inicial_enlace(id_e, col_c, ini, db)
+
+        merged = sorted(
+            [(t, tipo, "b") for t, tipo in ev_b] +
+            [(t, tipo, "c") for t, tipo in ev_c],
+            key=lambda x: x[0]
+        )
+
         segs: list[dict] = []
-        cur_t  = ini
-        cur_up = up_ini
-        for t_str, ev in raw_ev:
-            t = datetime.fromisoformat(t_str)
-            segs.append({"inicio": cur_t.isoformat(), "fin": t.isoformat(),
-                         "estado": "up" if cur_up else "down",
-                         "dur_seg": (t - cur_t).total_seconds()})
-            cur_up = (ev == "e+")
-            cur_t  = t
+        cur_t = ini
+        cur_up_b = up_ini_b
+        cur_up_c = up_ini_c
+        for t_ev, ev_tipo, assoc in merged:
+            combined_up = cur_up_b and cur_up_c
+            segs.append({"inicio": cur_t.isoformat(), "fin": t_ev.isoformat(),
+                         "estado": "up" if combined_up else "down",
+                         "dur_seg": (t_ev - cur_t).total_seconds()})
+            if assoc == "b":
+                cur_up_b = (ev_tipo == "e+")
+            else:
+                cur_up_c = (ev_tipo == "e+")
+            cur_t = t_ev
+        combined_up = cur_up_b and cur_up_c
         segs.append({"inicio": cur_t.isoformat(), "fin": fin.isoformat(),
-                     "estado": "up" if cur_up else "down",
+                     "estado": "up" if combined_up else "down",
                      "dur_seg": (fin - cur_t).total_seconds()})
 
         nombre_e = db.execute(
@@ -1988,7 +2024,9 @@ def guardar_resultados_dia(fecha_reporte, db: Session, id_centrales: list[int] |
     fin = ini + timedelta(days=1)
     fecha_dia = ini.date()
 
-    # ── Paso 1: cortes por enlace ────────────────────────────────────────────
+    # ── Paso 1: cortes por enlace (con cache para reusar en Paso 2) ──────────
+    _enlace_cache: dict[int, tuple] = {}
+
     if id_centrales:
         ph = ", ".join(f":c{i}" for i in range(len(id_centrales)))
         params_e = {f"c{i}": v for i, v in enumerate(id_centrales)}
@@ -1999,7 +2037,9 @@ def guardar_resultados_dia(fecha_reporte, db: Session, id_centrales: list[int] |
         enlaces = db.execute(text("SELECT id FROM enlaces")).fetchall()
     for (id_enlace,) in enlaces:
         try:
-            _, _, df_cortes = _procesar_enlace_pd(id_enlace, ini, fin, db)
+            result = _procesar_enlace_pd(id_enlace, ini, fin, db)
+            _enlace_cache[id_enlace] = result
+            _, _, df_cortes = result
             db.execute(
                 text("DELETE FROM cortes_reporte WHERE id_enlace=:e AND fecha=:f"),
                 {"e": id_enlace, "f": fecha_dia}
@@ -2043,9 +2083,9 @@ def guardar_resultados_dia(fecha_reporte, db: Session, id_centrales: list[int] |
             ).scalar() or "elcom"
             if protocolo == "iccp":
                 from services.reporte_service_iccp import calcular_ind_central_iccp
-                ind_seg, inconsistencia = calcular_ind_central_iccp(id_central, ini, fin, db)
+                ind_cortes, ind_datos, ind_seg, inconsistencia = calcular_ind_central_iccp(id_central, ini, fin, db)
             else:
-                ind_seg, inconsistencia = _calcular_ind_central(id_central, ini, fin, db)
+                ind_cortes, ind_datos, ind_seg, inconsistencia = _calcular_ind_central(id_central, ini, fin, db, _enlace_cache)
 
             dat_estado = _evaluar_dat_estado(id_central, ini, fin, db)
 
@@ -2055,10 +2095,11 @@ def guardar_resultados_dia(fecha_reporte, db: Session, id_centrales: list[int] |
             )
             db.execute(
                 text("""INSERT INTO resultados_central
-                        (id_central, fecha, ind_total_seg, inconsistencia, dat_estado, generado_en)
-                        VALUES (:c, :f, :ind, :inc, :ds, :gen)"""),
+                        (id_central, fecha, ind_total_seg, ind_cortes_seg, ind_datos_seg, inconsistencia, dat_estado, generado_en)
+                        VALUES (:c, :f, :ind, :ic, :id, :inc, :ds, :gen)"""),
                 {"c": id_central, "f": fecha_dia,
-                 "ind": ind_seg, "inc": int(inconsistencia),
+                 "ind": ind_seg, "ic": ind_cortes, "id": ind_datos,
+                 "inc": int(inconsistencia),
                  "ds": dat_estado, "gen": datetime.now()}
             )
             db.commit()
