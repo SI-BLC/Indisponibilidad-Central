@@ -143,11 +143,11 @@ export class Ris {
 
   readonly tipoLabels: Record<number, string> = { 1: 'Directa', 2: 'Redundante', 3: 'Solo Backup' };
 
-  // --- Colors ---
-  private readonly COL_CORTES = '#4472C4';
-  private readonly COL_DATOS  = '#ED7D31';
-  private readonly COL_ACUM   = '#70AD47';
-  private readonly COL_UMBRAL = '#C00000';
+  // --- Colors (Vision UI palette) ---
+  private readonly COL_CORTES = '#0075FF';
+  private readonly COL_DATOS  = '#FF9966';
+  private readonly COL_ACUM   = '#01B574';
+  private readonly COL_UMBRAL = '#FF5E62';
 
   // --- Charts ---
   private readonly piePlugins: any = {
@@ -168,7 +168,7 @@ export class Ris {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom', labels: { color: '#7c839d', font: { size: 11 } } },
+      legend: { position: 'bottom', labels: { color: '#a0aec0', font: { size: 11 } } },
       tooltip: {
         callbacks: {
           label: ctx => {
@@ -188,7 +188,7 @@ export class Ris {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom', labels: { color: '#7c839d', font: { size: 11 } } },
+      legend: { position: 'bottom', labels: { color: '#a0aec0', font: { size: 11 } } },
       tooltip: {
         callbacks: {
           label: ctx => {
@@ -208,7 +208,7 @@ export class Ris {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom', labels: { color: '#7c839d', font: { size: 11 } } },
+      legend: { position: 'bottom', labels: { color: '#a0aec0', font: { size: 11 } } },
       tooltip: {
         callbacks: {
           label: ctx => `${ctx.dataset.label}: ${Math.round(ctx.parsed.y ?? 0).toLocaleString('es-AR')} seg`,
@@ -227,7 +227,7 @@ export class Ris {
               display: true,
               content: '0.5% (432s)',
               position: 'end',
-              backgroundColor: 'rgba(192,0,0,0.15)',
+              backgroundColor: 'rgba(255,94,98,0.15)',
               color: this.COL_UMBRAL,
               font: { size: 10 },
             },
@@ -238,14 +238,14 @@ export class Ris {
     scales: {
       x: {
         stacked: true,
-        ticks: { color: '#7c839d', font: { size: 10, family: 'monospace' } },
+        ticks: { color: '#a0aec0', font: { size: 10, family: 'monospace' } },
         grid: { color: 'rgba(255,255,255,.04)' },
       },
       y: {
         stacked: true,
-        ticks: { color: '#7c839d', font: { size: 10 } },
+        ticks: { color: '#a0aec0', font: { size: 10 } },
         grid: { color: 'rgba(255,255,255,.06)' },
-        title: { display: true, text: 'Segundos', color: '#7c839d', font: { size: 11 } },
+        title: { display: true, text: 'Segundos', color: '#a0aec0', font: { size: 11 } },
       },
     },
   };
@@ -255,7 +255,7 @@ export class Ris {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'bottom', labels: { color: '#7c839d', font: { size: 11 } } },
+      legend: { position: 'bottom', labels: { color: '#a0aec0', font: { size: 11 } } },
       tooltip: {
         callbacks: {
           label: ctx => `${ctx.dataset.label}: ${(ctx.parsed.y ?? 0).toFixed(4)}%`,
@@ -274,7 +274,7 @@ export class Ris {
               display: true,
               content: '0.5%',
               position: 'end',
-              backgroundColor: 'rgba(192,0,0,0.15)',
+              backgroundColor: 'rgba(255,94,98,0.15)',
               color: this.COL_UMBRAL,
               font: { size: 10 },
             },
@@ -285,18 +285,18 @@ export class Ris {
     scales: {
       x: {
         stacked: true,
-        ticks: { color: '#7c839d', font: { size: 10, family: 'monospace' } },
+        ticks: { color: '#a0aec0', font: { size: 10, family: 'monospace' } },
         grid: { color: 'rgba(255,255,255,.04)' },
       },
       y: {
         stacked: true,
         ticks: {
-          color: '#7c839d',
+          color: '#a0aec0',
           font: { size: 10 },
           callback: (val) => val + '%',
         },
         grid: { color: 'rgba(255,255,255,.06)' },
-        title: { display: true, text: '% Indisponibilidad', color: '#7c839d', font: { size: 11 } },
+        title: { display: true, text: '% Indisponibilidad', color: '#a0aec0', font: { size: 11 } },
       },
       yAcum: {
         position: 'right',
@@ -327,7 +327,7 @@ export class Ris {
       datasets: [{
         data: [cortesMes, datosMes],
         backgroundColor: [colCortes, colDatos],
-        borderColor: ['rgba(68,114,196,0.4)', 'rgba(237,125,49,0.4)'],
+        borderColor: ['rgba(0,117,255,0.3)', 'rgba(255,153,102,0.3)'],
         borderWidth: 1,
       }],
     });
@@ -340,7 +340,7 @@ export class Ris {
       datasets: [{
         data: [cortesAM, datosAM],
         backgroundColor: [colCortes, colDatos],
-        borderColor: ['rgba(68,114,196,0.4)', 'rgba(237,125,49,0.4)'],
+        borderColor: ['rgba(0,117,255,0.3)', 'rgba(255,153,102,0.3)'],
         borderWidth: 1,
       }],
     });
@@ -392,7 +392,7 @@ export class Ris {
           data: det.map((d: any) => d.ind_acum_pct ?? 0),
           type: 'line',
           borderColor: colAcum,
-          backgroundColor: 'rgba(112,173,71,0.1)',
+          backgroundColor: 'rgba(1,181,116,0.1)',
           borderWidth: 2,
           pointRadius: 3,
           pointBackgroundColor: colAcum,
