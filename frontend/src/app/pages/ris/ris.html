@@ -69,19 +69,19 @@
         <div class="kpi-val kpi-big" [class]="pctClass(r.anio_movil.ind_pct)">{{ formatPct2(r.anio_movil.ind_pct) }}</div>
         <div class="kpi-sub">{{ r.anio_movil.meses_con_datos }} meses con datos</div>
       </div>
-      <div class="kpi-card kpi-meses">
+      <div class="kpi-card">
         <div class="kpi-label">Meses > 0.5%</div>
         <div class="kpi-val" [class]="r.anio_movil.meses_sobre_umbral > 0 ? 'val-red' : 'val-green'">
           {{ r.anio_movil.meses_sobre_umbral }}
         </div>
         <div class="kpi-sub">en año móvil</div>
       </div>
-      <div class="kpi-card kpi-cortes">
+      <div class="kpi-card">
         <div class="kpi-label">Cortes</div>
         <div class="kpi-val val-orange">{{ formatSeg(r.resumen_mes.ind_cortes_seg) }}<span class="kpi-unit">seg</span></div>
         <div class="kpi-sub">{{ formatPct(r.resumen_mes.ind_cortes_pct) }}</div>
       </div>
-      <div class="kpi-card kpi-datos">
+      <div class="kpi-card">
         <div class="kpi-label">Datos Inv.</div>
         <div class="kpi-val val-orange">{{ formatSeg(r.resumen_mes.ind_datos_seg) }}<span class="kpi-unit">seg</span></div>
         <div class="kpi-sub">{{ formatPct(r.resumen_mes.ind_datos_pct) }}</div>
