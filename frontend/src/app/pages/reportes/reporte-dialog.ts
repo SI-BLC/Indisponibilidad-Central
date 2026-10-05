@@ -29,8 +29,8 @@ export interface ReporteDialogData {
       font-family: monospace;
       font-size: 0.85rem;
       white-space: pre;
-      background: #0d1117;
-      color: #e3e5ef;
+      background: var(--bg-surface);
+      color: var(--text-1);
       padding: 16px;
       border-radius: 8px;
       max-height: 60vh;

@@ -170,7 +170,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>ENLACE</th><th>INICIO</th><th>FIN</th><th>DURACIÓN</th>
+              <th>ENLACE</th><th>INICIO</th><th>FIN</th><th>DURACIÓN</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -188,6 +188,12 @@
                   @if (c.bajo_tolerancia) {
                     <span class="badge-tol" matTooltip="No computa: menor a tolerancia">no computa</span>
                   }
+                </td>
+                <td>
+                  <button mat-icon-button class="comment-btn" matTooltip="Agregar comentario"
+                    (click)="abrirDialogCorte(c.inicio, c.fin)">
+                    <mat-icon>add_comment</mat-icon>
+                  </button>
                 </td>
               </tr>
             }
@@ -211,6 +217,7 @@
                 <th>TIPO</th>
                 <th>ESPERADOS</th><th>RECIBIDOS</th><th>BUENOS</th>
                 <th>NO REC.</th><th>INVÁLIDOS</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -233,6 +240,12 @@
                   <td class="mono">{{ p.buenos      | number:'1.0-1' }}</td>
                   <td class="mono" [class.val-red]="p.norecibidos > 0">{{ p.norecibidos | number:'1.0-1' }}</td>
                   <td class="mono" [class.val-orange]="p.invalidos  > 0">{{ p.invalidos  | number:'1.0-1' }}</td>
+                  <td>
+                    <button mat-icon-button class="comment-btn" matTooltip="Agregar comentario"
+                      (click)="abrirDialogDat(p.intervalo_fin)">
+                      <mat-icon>add_comment</mat-icon>
+                    </button>
+                  </td>
                 </tr>
               }
             </tbody>
@@ -241,49 +254,135 @@
       </div>
     }
 
-    <!-- ──────────────── COMENTARIO ──────────────── -->
-    <div class="panel comentario-panel">
-      <div class="panel-title"><mat-icon>comment</mat-icon> Comentario</div>
+    <!-- ──────────────── COMENTARIOS ──────────────── -->
+    @if (comentariosCorte.length > 0 || comentariosDat.length > 0) {
+      <div class="panel">
+        <div class="panel-title"><mat-icon>comment</mat-icon> Comentarios</div>
 
-      @if (comentarioEdit()) {
-        <!-- Modo edición -->
-        <textarea class="comentario-textarea" [(ngModel)]="textoEdit" rows="4"
-          placeholder="Escribí tu análisis u observación sobre este resultado..."></textarea>
-        <div class="comentario-actions">
-          <button mat-flat-button color="primary" (click)="guardarComentario()"
-            [disabled]="savingComentario() || !textoEdit.trim()">
-            <mat-icon>save</mat-icon> Guardar
-          </button>
-          <button mat-button (click)="cancelarEdicion()">Cancelar</button>
-        </div>
-      } @else if (comentario(); as c) {
-        <!-- Comentario existente -->
-        <div class="comentario-texto">{{ c.texto }}</div>
-        <div class="comentario-meta">
-          <mat-icon class="meta-icon">person</mat-icon> {{ c.usuario }}
-          &nbsp;·&nbsp;
-          <mat-icon class="meta-icon">schedule</mat-icon> {{ c.updated_at | date:'dd/MM/yyyy HH:mm' }}
-        </div>
-        @if (c.usuario === currentUser) {
-          <div class="comentario-actions">
-            <button mat-icon-button matTooltip="Editar" (click)="iniciarEdicion()">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button mat-icon-button matTooltip="Eliminar" color="warn" (click)="eliminarComentario()">
-              <mat-icon>delete</mat-icon>
-            </button>
+        @if (comentariosCorte.length > 0) {
+          <div class="comment-section-title">
+            <mat-icon>link_off</mat-icon> Cortes
+            <span class="comment-count">{{ comentariosCorte.length }}</span>
           </div>
+          @for (c of comentariosCorte; track c.id) {
+            <div class="comment-card">
+              <div class="comment-header">
+                <span class="comment-range mono">{{ horaCorta(c.fecha_inicio) }} → {{ horaCorta(c.fecha_fin) }}</span>
+                <span class="comment-user"><mat-icon class="meta-icon">person</mat-icon> {{ c.usuario }}</span>
+              </div>
+              @if (editandoId() === c.id) {
+                <textarea class="comentario-textarea" [(ngModel)]="editTexto" rows="3"></textarea>
+                <div class="comment-actions">
+                  <button mat-flat-button color="primary" (click)="guardarEdicion(c.id)"
+                    [disabled]="!editTexto.trim()">
+                    <mat-icon>save</mat-icon> Guardar
+                  </button>
+                  <button mat-button (click)="cancelarEdicion()">Cancelar</button>
+                </div>
+              } @else {
+                <div class="comment-texto">{{ c.texto }}</div>
+                @if (c.usuario === currentUser) {
+                  <div class="comment-actions">
+                    <button mat-icon-button matTooltip="Editar" (click)="iniciarEdicion(c)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button matTooltip="Eliminar" (click)="eliminarComentario(c.id)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+          }
         }
-      } @else {
-        <!-- Sin comentario -->
-        <div class="sin-comentario">
-          <span class="text-muted">Sin comentario para este resultado.</span>
-          <button mat-button color="primary" (click)="iniciarEdicion()">
-            <mat-icon>add</mat-icon> Agregar comentario
-          </button>
-        </div>
-      }
-    </div>
+
+        @if (comentariosDat.length > 0) {
+          <div class="comment-section-title" [style.margin-top]="comentariosCorte.length > 0 ? '20px' : '0'">
+            <mat-icon>table_chart</mat-icon> Datos inválidos
+            <span class="comment-count">{{ comentariosDat.length }}</span>
+          </div>
+          @for (c of comentariosDat; track c.id) {
+            <div class="comment-card">
+              <div class="comment-header">
+                <span class="comment-range mono">{{ horaCorta(c.fecha_inicio) }} → {{ horaCorta(c.fecha_fin) }}</span>
+                <span class="comment-user"><mat-icon class="meta-icon">person</mat-icon> {{ c.usuario }}</span>
+              </div>
+              @if (editandoId() === c.id) {
+                <textarea class="comentario-textarea" [(ngModel)]="editTexto" rows="3"></textarea>
+                <div class="comment-actions">
+                  <button mat-flat-button color="primary" (click)="guardarEdicion(c.id)"
+                    [disabled]="!editTexto.trim()">
+                    <mat-icon>save</mat-icon> Guardar
+                  </button>
+                  <button mat-button (click)="cancelarEdicion()">Cancelar</button>
+                </div>
+              } @else {
+                <div class="comment-texto">{{ c.texto }}</div>
+                @if (c.usuario === currentUser) {
+                  <div class="comment-actions">
+                    <button mat-icon-button matTooltip="Editar" (click)="iniciarEdicion(c)">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                    <button mat-icon-button matTooltip="Eliminar" (click)="eliminarComentario(c.id)">
+                      <mat-icon>delete_outline</mat-icon>
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+          }
+        }
+      </div>
+    }
 
   }
 </div>
+
+<!-- ──────────────── DIALOG COMENTARIO ──────────────── -->
+@if (dialogVisible()) {
+  <div class="dialog-overlay" (click)="cerrarDialog()">
+    <div class="dialog-box" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <span class="dialog-title">
+          <mat-icon>add_comment</mat-icon>
+          Comentario de {{ dialogTipo === 'corte' ? 'corte' : 'datos inválidos' }}
+        </span>
+        <button mat-icon-button (click)="cerrarDialog()" class="dialog-close">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="dialog-dates">
+          <div class="dialog-field">
+            <label>Fecha inicio</label>
+            <span class="mono">{{ horaCorta(dialogInicio) }}</span>
+          </div>
+          <div class="dialog-field">
+            <label>Fecha fin</label>
+            @if (dialogFinEditable) {
+              <input type="time" class="dialog-time-input" [(ngModel)]="dialogFin" />
+            } @else {
+              <span class="mono">{{ horaCorta(dialogFin) }}</span>
+            }
+          </div>
+        </div>
+
+        <textarea class="comentario-textarea" [(ngModel)]="dialogTexto" rows="4"
+          placeholder="Escribí tu análisis u observación..."></textarea>
+      </div>
+
+      <div class="dialog-footer">
+        <button mat-flat-button color="primary" (click)="guardarDialog()"
+          [disabled]="dialogSaving() || !dialogTexto.trim() || (dialogFinEditable && !dialogFin)">
+          @if (dialogSaving()) {
+            <mat-spinner diameter="16" />
+          } @else {
+            <mat-icon>save</mat-icon>
+          }
+          Agregar
+        </button>
+      </div>
+    </div>
+  </div>
+}

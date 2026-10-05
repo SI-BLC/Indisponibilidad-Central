@@ -8,7 +8,7 @@
   gap: 8px;
   font-size: .875rem;
   font-weight: 700;
-  color: #7c839d;
+  color: var(--text-4);
   text-transform: uppercase;
   letter-spacing: .5px;
   margin-bottom: 16px;
@@ -27,11 +27,11 @@
 }
 
 .calc-card {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -54,14 +54,15 @@
   mat-icon { font-size: 22px; width: 22px; height: 22px; }
 
   &.primary { background: rgba(83,155,255,.12); color: #539bff; }
-  &.warning  { background: rgba(248,192,118,.12); color: #f8c076; }
-  &.success  { background: rgba(75,208,139,.12);  color: #4bd08b; }
+  &.warning  { background: rgba(248,192,118,.12); color: var(--val-orange); }
+  &.success  { background: rgba(75,208,139,.12);  color: var(--val-green); }
+  &.accent   { background: rgba(179,157,219,.12); color: #b39ddb; }
 }
 
 .calc-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #e3e5ef;
+  color: var(--text-1);
   line-height: 1.2;
 }
 
@@ -71,18 +72,28 @@
 }
 
 .save-btn {
-  border-color: rgba(255,255,255,.12) !important;
-  color: #7c839d !important;
+  border-color: var(--border-3) !important;
+  color: var(--text-4) !important;
   border-radius: 8px !important;
   font-weight: 600 !important;
   gap: 6px;
   mat-spinner { opacity: .7; }
-  &:hover:not([disabled]) { border-color: #4bd08b !important; color: #4bd08b !important; }
+  &:hover:not([disabled]) { border-color: var(--val-green) !important; color: var(--val-green) !important; }
 
   &.save-btn-warning:hover:not([disabled]) {
-    border-color: #f8c076 !important;
-    color: #f8c076 !important;
+    border-color: var(--val-orange) !important;
+    color: var(--val-orange) !important;
   }
+}
+
+.progreso-banner {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(83,155,255,.08);
+  border: 1px solid rgba(83,155,255,.25);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: .8rem; color: #539bff;
+  mat-spinner { opacity: .7; }
 }
 
 .guardado-banner {
@@ -91,14 +102,14 @@
   border: 1px solid rgba(75,208,139,.25);
   border-radius: 10px;
   padding: 10px 16px;
-  font-size: .875rem; color: #4bd08b;
+  font-size: .875rem; color: var(--val-green);
   flex-wrap: wrap;
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
   strong { font-weight: 700; }
   &.has-errors {
     background: rgba(248,192,118,.08);
     border-color: rgba(248,192,118,.25);
-    color: #f8c076;
+    color: var(--val-orange);
   }
 }
 
@@ -110,20 +121,25 @@
 
 .date-input {
   flex: 1;
-  background: rgba(255,255,255,.05);
-  border: 1px solid rgba(255,255,255,.12);
+  background: var(--bg-active);
+  border: 1px solid var(--border-3);
   border-radius: 8px;
   padding: 8px 12px;
-  color: #e3e5ef;
+  color: var(--text-1);
   font-size: .875rem;
   outline: none;
-  &:focus { border-color: #4bd08b; }
-  &::-webkit-calendar-picker-indicator { filter: invert(.7); cursor: pointer; }
+  &:focus { border-color: var(--val-green); }
+  &::-webkit-calendar-picker-indicator { filter: var(--date-icon-filter); cursor: pointer; }
 }
 
 .save-btn-success:hover:not([disabled]) {
-  border-color: #4bd08b !important;
-  color: #4bd08b !important;
+  border-color: var(--val-green) !important;
+  color: var(--val-green) !important;
+}
+
+.save-btn-accent:hover:not([disabled]) {
+  border-color: #b39ddb !important;
+  color: #b39ddb !important;
 }
 
 .ver-link {
@@ -135,8 +151,8 @@
 
 // --- Selector de centrales ---
 .selector-centrales {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
   padding: 20px 24px;
   margin-bottom: 20px;
@@ -183,8 +199,8 @@
 
 .chip-clear {
   background: none;
-  border: 1px solid rgba(255,255,255,.12);
-  color: #7c839d;
+  border: 1px solid var(--border-3);
+  color: var(--text-4);
   border-radius: 20px;
   padding: 4px 12px;
   font-size: .75rem;

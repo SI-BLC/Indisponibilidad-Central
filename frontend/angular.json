@@ -49,8 +49,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "16kB",
+                  "maximumError": "32kB"
                 }
               ],
               "outputHashing": "all"
@@ -67,7 +67,8 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "port": 80,
-            "host": "0.0.0.0"
+            "host": "0.0.0.0",
+            "allowedHosts": ["indsql.core", "10.230.90.220"]
           },
           "configurations": {
             "production": {

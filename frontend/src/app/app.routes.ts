@@ -98,5 +98,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/instaladores/instaladores').then((m) => m.Instaladores),
   },
+  {
+    path: 'ris',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/ris/ris').then((m) => m.Ris),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];

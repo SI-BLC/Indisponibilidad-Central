@@ -1,17 +1,17 @@
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
 
 .filter-panel, .table-panel {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 .filter-panel { padding: 20px; margin-bottom: 24px; }
 
 .panel-title {
   display: flex; align-items: center; gap: 8px;
-  font-size: 0.8rem; font-weight: 600; color: #7c839d;
+  font-size: 0.8rem; font-weight: 600; color: var(--text-4);
   text-transform: uppercase; letter-spacing: .08em;
   margin-bottom: 16px;
   mat-icon { font-size: 16px; width: 16px; height: 16px; }
@@ -25,24 +25,24 @@
 .table-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid var(--border-1);
 }
 
 table { width: 100%; }
 
-.mono-id { font-family: monospace; color: #7c839d; font-size: 0.85rem; }
+.mono-id { font-family: monospace; color: var(--text-4); font-size: 0.85rem; }
 
 .actions-cell { white-space: nowrap; width: 96px; }
 
-.edit-btn   { color: #3f4460 !important; &:hover { color: #5c85d6 !important; } }
-.delete-btn { color: #3f4460 !important; &:hover { color: #ff6b6b !important; } }
-.save-btn   { color: #3f4460 !important; &:hover { color: #4caf7d !important; } }
-.cancel-btn { color: #3f4460 !important; &:hover { color: #7c839d !important; } }
+.edit-btn   { color: var(--text-6) !important; &:hover { color: #5c85d6 !important; } }
+.delete-btn { color: var(--text-6) !important; &:hover { color: var(--val-red) !important; } }
+.save-btn   { color: var(--text-6) !important; &:hover { color: #4caf7d !important; } }
+.cancel-btn { color: var(--text-6) !important; &:hover { color: var(--text-4) !important; } }
 
 .editing-row td { background: rgba(92, 133, 214, 0.06) !important; }
 
 .inline-input {
-  background: #1a1f2e;
+  background: var(--bg-surface-alt);
   border: 1px solid rgba(92,133,214,.4);
   border-radius: 6px;
   color: inherit;
@@ -56,18 +56,18 @@ table { width: 100%; }
 
 .table-empty {
   display: flex; align-items: center; gap: 8px; justify-content: center;
-  padding: 32px; color: #7c839d;
+  padding: 32px; color: var(--text-4);
   mat-icon { opacity: .4; }
 }
 
 .add-grupo-form {
   padding: 20px;
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: 1px solid var(--border-1);
 }
 
 .add-grupo-title {
   display: flex; align-items: center; gap: 6px;
-  font-size: 0.8rem; font-weight: 600; color: #7c839d;
+  font-size: 0.8rem; font-weight: 600; color: var(--text-4);
   text-transform: uppercase; letter-spacing: .08em;
   margin-bottom: 12px;
   mat-icon { font-size: 16px; width: 16px; height: 16px; }
@@ -80,10 +80,10 @@ table { width: 100%; }
 }
 
 .central-panel {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-card);
   padding: 20px;
   margin-bottom: 24px;
 }
@@ -97,20 +97,20 @@ table { width: 100%; }
   display: flex; gap: 8px; align-items: center;
 }
 
-.import-all-btn { color: #4bd08b !important; border-color: rgba(75,208,139,.3) !important; }
+.import-all-btn { color: var(--val-green) !important; border-color: rgba(75,208,139,.3) !important; }
 
 .badge-link {
   font-size: .7rem; font-weight: 700; border-radius: 20px;
   padding: 2px 8px; flex-shrink: 0;
   &.nuevo  { background: rgba(83,155,255,.12); border: 1px solid rgba(83,155,255,.3); color: #539bff; }
-  &.existe { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #7c839d; }
+  &.existe { background: var(--border-2); border: 1px solid var(--border-3); color: var(--text-4); }
 }
 
 .gc-table { width: 100%; }
 
 .central-loading {
   display: flex; align-items: center; gap: 12px;
-  color: #7c839d; padding: 8px 0;
+  color: var(--text-4); padding: 8px 0;
 }
 
 .grupos-central-list {
@@ -131,7 +131,7 @@ table { width: 100%; }
   &.chip-exists {
     background: rgba(75,208,139,.08);
     border: 1px solid rgba(75,208,139,.2);
-    color: #4bd08b;
+    color: var(--val-green);
   }
 }
 
@@ -146,7 +146,7 @@ table { width: 100%; }
 
 .chip-check-icon {
   font-size: 18px; width: 18px; height: 18px;
-  color: #4bd08b; opacity: .8;
+  color: var(--val-green); opacity: .8;
 }
 
 .calcular-check {

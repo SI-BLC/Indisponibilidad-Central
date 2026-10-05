@@ -3,18 +3,18 @@
   top: 0; left: 0; right: 0;
   z-index: 200;
   height: 64px;
-  background: #131720 !important;
-  border-bottom: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface) !important;
+  border-bottom: 1px solid var(--border-1);
   padding: 0 16px;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 1px 0 rgba(255,255,255,.04);
+  box-shadow: 0 1px 0 var(--border-2);
 }
 
 .menu-btn {
-  color: #7c839d !important;
-  &:hover { color: #e3e5ef !important; }
+  color: var(--text-4) !important;
+  &:hover { color: var(--text-1) !important; }
 }
 
 .brand {
@@ -43,7 +43,7 @@
 .brand-name {
   font-size: 1rem;
   font-weight: 700;
-  color: #e3e5ef;
+  color: var(--text-1);
   letter-spacing: -.01em;
 }
 
@@ -63,12 +63,12 @@
   padding: 4px 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #4bd08b;
+  color: var(--val-green);
 
   .chip-dot {
     width: 6px;
     height: 6px;
-    background: #4bd08b;
+    background: var(--val-green);
     border-radius: 50%;
     animation: pulse 2s infinite;
   }
@@ -80,20 +80,20 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-active);
+  border: 1px solid var(--border-3);
 
   .user-icon {
     font-size: 18px;
     width: 18px;
     height: 18px;
-    color: #7c839d;
+    color: var(--text-4);
   }
 
   .user-name {
     font-size: 0.8rem;
     font-weight: 500;
-    color: #b0b7cc;
+    color: var(--text-2);
     max-width: 160px;
     white-space: nowrap;
     overflow: hidden;
@@ -101,9 +101,49 @@
   }
 }
 
+.theme-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-3);
+  border-radius: 10px;
+  background: var(--bg-active);
+  cursor: pointer;
+  padding: 0;
+  transition: all .25s ease;
+
+  &:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-2);
+    transform: scale(1.05);
+  }
+}
+
+.theme-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-3);
+  transition: color .3s ease, transform .4s ease;
+
+  &.is-dark {
+    color: #f0c040;
+    transform: rotate(180deg);
+  }
+}
+
+.theme-svg {
+  width: 18px;
+  height: 18px;
+}
+
 .action-btn {
-  color: #7c839d !important;
-  &:hover { color: #e3e5ef !important; }
+  color: var(--text-4) !important;
+  &:hover { color: var(--text-1) !important; }
 }
 
 @keyframes pulse {

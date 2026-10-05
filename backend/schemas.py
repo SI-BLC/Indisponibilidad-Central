@@ -6,11 +6,15 @@ from typing import Optional
 # --- Centrales ---
 class CentralBase(BaseModel):
     nemo: str
+    nemo_cammesa: Optional[str] = None
+    cliente: Optional[str] = None
+    pem: Optional[date] = None
     tipo: Optional[int] = None
     ip1: Optional[str] = None
     ip2: Optional[str] = None
     protocolo: str = "elcom"
     id_concentrador: Optional[int] = None
+    ssl: int = 0
 
 
 class CentralCreate(CentralBase):
@@ -19,11 +23,15 @@ class CentralCreate(CentralBase):
 
 class CentralUpdate(BaseModel):
     nemo: Optional[str] = None
+    nemo_cammesa: Optional[str] = None
+    cliente: Optional[str] = None
+    pem: Optional[date] = None
     tipo: Optional[int] = None
     ip1: Optional[str] = None
     ip2: Optional[str] = None
     protocolo: Optional[str] = None
     id_concentrador: Optional[int] = None
+    ssl: Optional[int] = None
 
 
 class CentralOut(CentralBase):

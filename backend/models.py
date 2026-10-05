@@ -6,11 +6,15 @@ class Central(Base):
     __tablename__ = "centrales"
     id = Column(Integer, primary_key=True, index=True)
     nemo = Column(String(45), nullable=False)
+    nemo_cammesa = Column(String(50), nullable=True)
+    cliente = Column(String(100), nullable=True)
+    pem = Column(Date, nullable=True)
     ip1 = Column(String(45), nullable=True)
     ip2 = Column(String(45), nullable=True)
     tipo = Column(Integer, nullable=True)  # 1=Directa, 2=Redundante, 3=Solo-backup
     protocolo = Column(String(10), nullable=False, default="elcom")  # elcom | iccp
     id_concentrador = Column(Integer, nullable=True)  # FK a centrales.id del concentrador
+    ssl = Column(Integer, nullable=False, default=0)
 
 
 class DataSet(Base):

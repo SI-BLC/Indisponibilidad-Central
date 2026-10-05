@@ -12,7 +12,7 @@ import { Comentario } from '../models/comentario';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
-  private readonly base = 'https://10.230.90.220/api';
+  private readonly base = '/api';
 
   // Centrales
   getCentrales(): Observable<Central[]> {
@@ -108,14 +108,43 @@ export class ApiService {
     return this.http.post<GuardarResultadosResponse>(`${this.base}/resultados/guardar`, null, { params });
   }
 
-  guardarResultadosMes(year?: number, month?: number, idCentrales?: number[]): Observable<GuardarResultadosMesResponse> {
-    let params = new HttpParams();
-    if (year) params = params.set('year', year);
-    if (month) params = params.set('month', month);
-    if (idCentrales?.length) {
-      for (const id of idCentrales) params = params.append('id_centrales', id);
-    }
-    return this.http.post<GuardarResultadosMesResponse>(`${this.base}/resultados/guardar-mes`, null, { params });
+  guardarResultadosMes(year?: number, month?: number, idCentrales?: number[]): Observable<{type: string; [key: string]: any}> {
+    return new Observable(observer => {
+      let url = `${this.base}/resultados/guardar-mes?`;
+      const parts: string[] = [];
+      if (year) parts.push(`year=${year}`);
+      if (month) parts.push(`month=${month}`);
+      if (idCentrales?.length) {
+        for (const id of idCentrales) parts.push(`id_centrales=${id}`);
+      }
+      url += parts.join('&');
+
+      const token = localStorage.getItem('auth_token') || '';
+      fetch(url, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }).then(response => {
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        const read = (): void => {
+          reader.read().then(({ done, value }) => {
+            if (done) { observer.complete(); return; }
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  observer.next(data);
+                } catch {}
+              }
+            }
+            read();
+          }).catch(err => observer.error(err));
+        };
+        read();
+      }).catch(err => observer.error(err));
+    });
   }
 
   getCortes(filtros: {
@@ -158,13 +187,13 @@ export class ApiService {
     return this.http.get<DetalleCentral>(`${this.base}/resultados/detalle/${idCentral}/${fecha}`);
   }
 
-  // Check enlaces desde central (proxy via backend para evitar CORS)
-  checkEnlaces(ip: string): Observable<string> {
-    return this.http.get(`${this.base}/centrales/checkenlaces/${ip}`, { responseType: 'text' });
+  checkEnlaces(ip: string, ssl: number = 0): Observable<string> {
+    const params = new HttpParams().set('ssl', ssl.toString());
+    return this.http.get(`${this.base}/centrales/checkenlaces/${ip}`, { responseType: 'text', params });
   }
 
-  checkGrupos(ip: string, nombreEnlace: string): Observable<string> {
-    const params = new HttpParams().set('nombre_enlace', nombreEnlace);
+  checkGrupos(ip: string, nombreEnlace: string, ssl: number = 0): Observable<string> {
+    const params = new HttpParams().set('nombre_enlace', nombreEnlace).set('ssl', ssl.toString());
     return this.http.get(`${this.base}/centrales/checkgrupos/${ip}`, { responseType: 'text', params });
   }
 
@@ -245,14 +274,14 @@ export class ApiService {
   listarComentarios(idCentral: number, fechaDia: string, tipo?: string): Observable<Comentario[]> {
     let params = new HttpParams().set('id_central', idCentral).set('fecha_dia', fechaDia);
     if (tipo) params = params.set('tipo', tipo);
-    return this.http.get<Comentario[]>(`${this.base}/comentarios/`, { params });
+    return this.http.get<Comentario[]>(`${this.base}/comentarios`, { params });
   }
 
   crearComentario(body: {
     id_central: number; fecha_dia: string; tipo: string;
     fecha_inicio: string; fecha_fin: string; texto: string;
   }): Observable<Comentario> {
-    return this.http.post<Comentario>(`${this.base}/comentarios/`, body);
+    return this.http.post<Comentario>(`${this.base}/comentarios`, body);
   }
 
   actualizarComentario(id: number, texto: string): Observable<Comentario> {
@@ -265,14 +294,14 @@ export class ApiService {
 
   // Cortes manuales
   insertarCorteManual(body: { id_enlace: number; fecha: string }): Observable<any> {
-    return this.http.post(`${this.base}/cortes-manuales/`, body);
+    return this.http.post(`${this.base}/cortes-manuales`, body);
   }
 
   listarCortesManuales(idEnlace?: number, fecha?: string): Observable<any[]> {
     let params = new HttpParams();
     if (idEnlace) params = params.set('id_enlace', idEnlace);
     if (fecha) params = params.set('fecha', fecha);
-    return this.http.get<any[]>(`${this.base}/cortes-manuales/`, { params });
+    return this.http.get<any[]>(`${this.base}/cortes-manuales`, { params });
   }
 
   eliminarCorteManual(idCon: number): Observable<any> {
@@ -339,6 +368,19 @@ export class ApiService {
     }).catch((err) => {
       callbacks.onError('Error de conexión: ' + err.message);
     });
+  }
+
+  // RIS
+  getRis(idCentral: number, mes: string): Observable<any> {
+    return this.http.get(`${this.base}/ris/${idCentral}`, { params: { mes } });
+  }
+
+  getValidacionRis(idCentral: number, mes: string): Observable<any> {
+    return this.http.get(`${this.base}/ris/validacion/${idCentral}/${mes}`);
+  }
+
+  setValidacionRis(idCentral: number, mes: string, validado: boolean, comentario: string | null): Observable<any> {
+    return this.http.post(`${this.base}/ris/validacion/${idCentral}/${mes}`, { validado, comentario });
   }
 
   historialInstaladores(): Observable<any[]> {

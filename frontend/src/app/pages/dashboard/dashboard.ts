@@ -21,6 +21,7 @@ export class Dashboard implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   guardandoResultados = signal(false);
+  progresoResultados = signal('');
   ultimoGuardado = signal<GuardarResultadosMesResponse | null>(null);
 
   totalEnlaces    = computed(() => this.centrales().reduce((a, c) => a + c.cant_enlaces, 0));
@@ -41,8 +42,19 @@ export class Dashboard implements OnInit {
     this.guardandoResultados.set(true);
     this.ultimoGuardado.set(null);
     this.api.guardarResultadosMes().subscribe({
-      next: (res) => { this.ultimoGuardado.set(res); this.guardandoResultados.set(false); },
-      error: () => this.guardandoResultados.set(false),
+      next: (ev) => {
+        if (ev.type === 'progress') {
+          this.progresoResultados.set(`Día ${ev['dia_num']}/${ev['total_dias']}`);
+        } else if (ev.type === 'done') {
+          this.ultimoGuardado.set(ev as any);
+          this.guardandoResultados.set(false);
+          this.progresoResultados.set('');
+        } else if (ev.type === 'error') {
+          this.guardandoResultados.set(false);
+          this.progresoResultados.set('');
+        }
+      },
+      error: () => { this.guardandoResultados.set(false); this.progresoResultados.set(''); },
     });
   }
 }

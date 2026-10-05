@@ -11,7 +11,7 @@
       <div class="panel-icon-header">
         <div class="icon-box primary"><mat-icon>electric_bolt</mat-icon></div>
         <div>
-          <div style="font-weight:600;color:#e3e5ef">Nueva Central</div>
+          <div style="font-weight:600;color:var(--text-1)">Nueva Central</div>
           <div class="text-muted" style="font-size:.8rem">Completá los datos de configuración</div>
         </div>
       </div>
@@ -20,11 +20,30 @@
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Código NEMO</mat-label>
           <input matInput formControlName="nemo" placeholder="Ej: BCOG, MDZA, RSRI..." autocomplete="off" />
-          <mat-icon matSuffix style="color:#7c839d;font-size:18px">badge</mat-icon>
+          <mat-icon matSuffix style="color:var(--text-4);font-size:18px">badge</mat-icon>
           @if (form.controls.nemo.hasError('required') && form.controls.nemo.touched) {
             <mat-error>El código NEMO es requerido</mat-error>
           }
         </mat-form-field>
+
+        <div class="ip-row" style="margin-top:8px">
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>NEMO CAMMESA</mat-label>
+            <input matInput formControlName="nemo_cammesa" placeholder="Ej: CFCAHO1G" autocomplete="off" />
+            <mat-icon matSuffix style="color:var(--text-4);font-size:18px">tag</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="flex-1">
+            <mat-label>Cliente</mat-label>
+            <input matInput formControlName="cliente" placeholder="Ej: 360 ENERGY" autocomplete="off" />
+            <mat-icon matSuffix style="color:var(--text-4);font-size:18px">business</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" style="width:220px">
+            <mat-label>PEM</mat-label>
+            <input matInput [matDatepicker]="pemPicker" formControlName="pem" />
+            <mat-datepicker-toggle matSuffix [for]="pemPicker"></mat-datepicker-toggle>
+            <mat-datepicker #pemPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
 
         <div class="ip-row" style="margin-top:8px">
           <mat-form-field appearance="outline" class="flex-1">
@@ -68,14 +87,23 @@
           <mat-form-field appearance="outline" class="flex-1">
             <mat-label>IP Principal</mat-label>
             <input matInput formControlName="ip1" placeholder="Ej: 192.168.1.100" autocomplete="off" />
-            <mat-icon matSuffix style="color:#7c839d;font-size:18px">router</mat-icon>
+            <mat-icon matSuffix style="color:var(--text-4);font-size:18px">router</mat-icon>
           </mat-form-field>
           <mat-form-field appearance="outline" class="flex-1">
-            <mat-label>IP Redundante <span style="font-size:.75em;color:#7c839d">(opcional)</span></mat-label>
+            <mat-label>IP Redundante <span style="font-size:.75em;color:var(--text-4)">(opcional)</span></mat-label>
             <input matInput formControlName="ip2" placeholder="Ej: 192.168.1.101" autocomplete="off" />
-            <mat-icon matSuffix style="color:#7c839d;font-size:18px">router</mat-icon>
+            <mat-icon matSuffix style="color:var(--text-4);font-size:18px">router</mat-icon>
           </mat-form-field>
         </div>
+
+        <mat-form-field appearance="outline" style="width:200px;margin-top:8px">
+          <mat-label>Conexión Nodo</mat-label>
+          <mat-select formControlName="ssl">
+            <mat-option [value]="0">HTTP :8089</mat-option>
+            <mat-option [value]="1">HTTPS :8443</mat-option>
+          </mat-select>
+          <mat-icon matPrefix style="color:var(--text-4);font-size:18px;margin-right:4px">lock</mat-icon>
+        </mat-form-field>
 
         <div class="form-actions">
           <a mat-stroked-button routerLink="/dashboard" class="cancel-btn">Cancelar</a>
@@ -108,7 +136,7 @@
     <div class="panel-icon-header">
       <div class="icon-box primary"><mat-icon>cable</mat-icon></div>
       <div>
-        <div style="font-weight:600;color:#e3e5ef">Obtener Enlaces</div>
+        <div style="font-weight:600;color:var(--text-1)">Obtener Enlaces</div>
         <div class="text-muted" style="font-size:.8rem">Consultá los enlaces disponibles en la central por IP</div>
       </div>
     </div>
@@ -118,7 +146,7 @@
         <mat-label>IP de la Central</mat-label>
         <input matInput [value]="ipCentral" (input)="ipCentral = $any($event.target).value"
           placeholder="Ej: 192.168.1.100" autocomplete="off" (keyup.enter)="obtenerEnlaces()" />
-        <mat-icon matSuffix style="color:#7c839d;font-size:18px">router</mat-icon>
+        <mat-icon matSuffix style="color:var(--text-4);font-size:18px">router</mat-icon>
       </mat-form-field>
       <button mat-flat-button color="accent" (click)="obtenerEnlaces()"
         [disabled]="!ipCentral || loadingEnlaces()" style="margin-top:4px;height:56px">
@@ -134,7 +162,7 @@
     @if (enlacesObtenidos().length > 0) {
       <div class="enlaces-obtenidos-list">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:.8rem;color:#7c839d;font-weight:500">
+          <span style="font-size:.8rem;color:var(--text-4);font-weight:500">
             {{ enlacesObtenidos().length }} enlace(s) — se guardarán junto con la central
           </span>
         </div>
@@ -147,13 +175,13 @@
                 (keyup.escape)="cancelarEdicion(i)"
                 #editInput />
               <button mat-icon-button (click)="confirmarEdicion(i)" title="Confirmar">
-                <mat-icon style="color:#4bd08b">check</mat-icon>
+                <mat-icon style="color:var(--val-green)">check</mat-icon>
               </button>
               <button mat-icon-button (click)="cancelarEdicion(i)" title="Cancelar">
-                <mat-icon style="color:#7c839d">close</mat-icon>
+                <mat-icon style="color:var(--text-4)">close</mat-icon>
               </button>
             } @else {
-              <mat-icon style="color:#7c839d;font-size:16px;width:16px;height:16px;margin-right:8px">link</mat-icon>
+              <mat-icon style="color:var(--text-4);font-size:16px;width:16px;height:16px;margin-right:8px">link</mat-icon>
               <span class="enlace-obtenido-nombre">{{ enlace.nombre }}</span>
               <button mat-icon-button (click)="iniciarEdicion(i)" title="Renombrar">
                 <mat-icon style="color:#539bff;font-size:18px">edit</mat-icon>

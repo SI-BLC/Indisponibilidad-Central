@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -6,9 +6,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ApiService } from '../../services/api';
 import { AuthService } from '../../services/auth.service';
-import { DetalleCentral, DetalleSegmento } from '../../models/resultado';
+import { DetalleCentral } from '../../models/resultado';
 import { Comentario } from '../../models/comentario';
 
 @Component({
@@ -16,6 +17,7 @@ import { Comentario } from '../../models/comentario';
   imports: [
     CommonModule, DecimalPipe, FormsModule, RouterLink,
     MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule,
+    MatSnackBarModule,
   ],
   templateUrl: './resultado-detalle.html',
   styleUrl:    './resultado-detalle.scss',
@@ -25,6 +27,7 @@ export class ResultadoDetalle implements OnInit {
   private readonly auth   = inject(AuthService);
   private readonly route  = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly snack  = inject(MatSnackBar);
 
   centralId = 0;
   fecha     = '';
@@ -32,12 +35,25 @@ export class ResultadoDetalle implements OnInit {
   detalle   = signal<DetalleCentral | null>(null);
   error     = signal('');
 
-  comentario       = signal<Comentario | null>(null);
-  comentarioEdit   = signal(false);
-  textoEdit        = '';
-  savingComentario = signal(false);
+  comentarios = signal<Comentario[]>([]);
+
+  // Dialog state
+  dialogVisible = signal(false);
+  dialogTipo    = '';
+  dialogInicio  = '';
+  dialogFin     = '';
+  dialogFinEditable = false;
+  dialogTexto   = '';
+  dialogSaving  = signal(false);
+
+  // Edit inline
+  editandoId    = signal<number | null>(null);
+  editTexto     = '';
 
   get currentUser() { return this.auth.currentUser()?.username ?? ''; }
+
+  get comentariosCorte() { return this.comentarios().filter(c => c.tipo === 'corte'); }
+  get comentariosDat()   { return this.comentarios().filter(c => c.tipo === 'dat'); }
 
   readonly DIA_SEG = 86400;
 
@@ -45,7 +61,7 @@ export class ResultadoDetalle implements OnInit {
     this.centralId = Number(this.route.snapshot.paramMap.get('centralId'));
     this.fecha     = this.route.snapshot.paramMap.get('fecha') ?? '';
     this.cargar();
-    this.cargarComentario();
+    this.cargarComentarios();
   }
 
   cargar() {
@@ -57,47 +73,96 @@ export class ResultadoDetalle implements OnInit {
     });
   }
 
-  // ── Comentario ────────────────────────────────────────────────────────────
+  // ── Comentarios ───────────────────────────────────────────────────────────
 
-  cargarComentario() {
-    this.api.getComentario(this.centralId, this.fecha).subscribe({
-      next: (c) => this.comentario.set(c),
+  cargarComentarios() {
+    this.api.listarComentarios(this.centralId, this.fecha).subscribe({
+      next: (list) => this.comentarios.set(list),
       error: () => {},
     });
   }
 
-  iniciarEdicion() {
-    this.textoEdit = this.comentario()?.texto ?? '';
-    this.comentarioEdit.set(true);
+  abrirDialogCorte(inicio: string, fin: string) {
+    this.dialogTipo = 'corte';
+    this.dialogInicio = inicio;
+    this.dialogFin = fin;
+    this.dialogFinEditable = false;
+    this.dialogTexto = '';
+    this.dialogVisible.set(true);
+  }
+
+  abrirDialogDat(inicio: string) {
+    this.dialogTipo = 'dat';
+    this.dialogInicio = inicio;
+    this.dialogFin = '';
+    this.dialogFinEditable = true;
+    this.dialogTexto = '';
+    this.dialogVisible.set(true);
+  }
+
+  cerrarDialog() {
+    this.dialogVisible.set(false);
+  }
+
+  guardarDialog() {
+    const texto = this.dialogTexto.trim();
+    if (!texto) return;
+    if (this.dialogFinEditable && !this.dialogFin) return;
+    this.dialogSaving.set(true);
+    const fechaFin = this.dialogFinEditable
+      ? `${this.fecha}T${this.dialogFin}:00`
+      : this.dialogFin;
+    this.api.crearComentario({
+      id_central: this.centralId,
+      fecha_dia: this.fecha,
+      tipo: this.dialogTipo,
+      fecha_inicio: this.dialogInicio,
+      fecha_fin: fechaFin,
+      texto,
+    }).subscribe({
+      next: (c) => {
+        this.comentarios.update(list => [...list, c]);
+        this.dialogVisible.set(false);
+        this.dialogSaving.set(false);
+        this.snack.open('Comentario guardado', 'OK', { duration: 3000 });
+      },
+      error: () => {
+        this.dialogSaving.set(false);
+        this.snack.open('Error al guardar', 'OK', { duration: 3000 });
+      },
+    });
+  }
+
+  iniciarEdicion(c: Comentario) {
+    this.editandoId.set(c.id);
+    this.editTexto = c.texto;
   }
 
   cancelarEdicion() {
-    this.comentarioEdit.set(false);
+    this.editandoId.set(null);
   }
 
-  guardarComentario() {
-    const texto = this.textoEdit.trim();
+  guardarEdicion(id: number) {
+    const texto = this.editTexto.trim();
     if (!texto) return;
-    this.savingComentario.set(true);
-    const existe = !!this.comentario();
-    const op = existe
-      ? this.api.actualizarComentario(this.centralId, this.fecha, texto)
-      : this.api.crearComentario(this.centralId, this.fecha, texto);
-    op.subscribe({
-      next: (c) => {
-        this.comentario.set(c);
-        this.comentarioEdit.set(false);
-        this.savingComentario.set(false);
+    this.api.actualizarComentario(id, texto).subscribe({
+      next: (updated) => {
+        this.comentarios.update(list => list.map(c => c.id === id ? updated : c));
+        this.editandoId.set(null);
+        this.snack.open('Comentario actualizado', 'OK', { duration: 3000 });
       },
-      error: () => this.savingComentario.set(false),
+      error: () => this.snack.open('Error al actualizar', 'OK', { duration: 3000 }),
     });
   }
 
-  eliminarComentario() {
-    if (!confirm('¿Eliminar el comentario?')) return;
-    this.api.eliminarComentario(this.centralId, this.fecha).subscribe({
-      next: () => this.comentario.set(null),
-      error: () => {},
+  eliminarComentario(id: number) {
+    if (!confirm('¿Eliminar este comentario?')) return;
+    this.api.eliminarComentario(id).subscribe({
+      next: () => {
+        this.comentarios.update(list => list.filter(c => c.id !== id));
+        this.snack.open('Comentario eliminado', 'OK', { duration: 3000 });
+      },
+      error: () => this.snack.open('Error al eliminar', 'OK', { duration: 3000 }),
     });
   }
 
@@ -107,7 +172,6 @@ export class ResultadoDetalle implements OnInit {
 
   // ── Timeline helpers ──────────────────────────────────────────────────────
 
-  /** Porcentaje de posición/ancho dentro del día (0..100) */
   pct(t: string): number {
     const d = new Date(t);
     const hh = d.getHours(), mm = d.getMinutes(), ss = d.getSeconds();

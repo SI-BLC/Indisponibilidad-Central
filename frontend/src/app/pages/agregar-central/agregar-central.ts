@@ -8,6 +8,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { ApiService } from '../../services/api';
 
 interface EnlaceObtenido {
@@ -18,10 +20,11 @@ interface EnlaceObtenido {
 
 @Component({
   selector: 'app-agregar-central',
+  providers: [provideNativeDateAdapter()],
   imports: [
     ReactiveFormsModule, RouterLink, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatSnackBarModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinnerModule, MatDatepickerModule,
   ],
   templateUrl: './agregar-central.html',
   styleUrl: './agregar-central.scss',
@@ -40,11 +43,15 @@ export class AgregarCentral implements OnInit {
 
   form = this.fb.group({
     nemo: ['', [Validators.required, Validators.maxLength(50)]],
+    nemo_cammesa: [''],
+    cliente: [''],
+    pem: [null as Date | null],
     tipo: [null as number | null, Validators.required],
     protocolo: ['elcom', Validators.required],
     id_concentrador: [null as number | null],
     ip1: [''],
     ip2: [''],
+    ssl: [0],
   });
 
   get necesitaConcentrador() { return [2, 3].includes(this.form.value.tipo ?? 0); }
@@ -66,7 +73,8 @@ export class AgregarCentral implements OnInit {
     if (this.form.invalid) return;
     this.loading.set(true);
     const v = this.form.value;
-    this.api.crearCentral({ nemo: v.nemo!, tipo: v.tipo!, protocolo: v.protocolo!, id_concentrador: v.id_concentrador || null, ip1: v.ip1 || null, ip2: v.ip2 || null }).subscribe({
+    const pemDate = v.pem ? (v.pem instanceof Date ? v.pem.toISOString().slice(0, 10) : v.pem) : null;
+    this.api.crearCentral({ nemo: v.nemo!, nemo_cammesa: v.nemo_cammesa || null, cliente: v.cliente || null, pem: pemDate as any, tipo: v.tipo!, protocolo: v.protocolo!, id_concentrador: v.id_concentrador || null, ip1: v.ip1 || null, ip2: v.ip2 || null, ssl: v.ssl ?? 0 }).subscribe({
       next: (central) => {
         const pendientes = this.enlacesObtenidos();
         if (pendientes.length === 0) {
@@ -100,7 +108,7 @@ export class AgregarCentral implements OnInit {
     if (!this.ipCentral) return;
     this.loadingEnlaces.set(true);
     this.enlacesObtenidos.set([]);
-    this.api.checkEnlaces(this.ipCentral).subscribe({
+    this.api.checkEnlaces(this.ipCentral, this.form.value.ssl ?? 0).subscribe({
       next: (raw) => {
         this.enlacesObtenidos.set(this.parseEnlacesRaw(raw));
         this.loadingEnlaces.set(false);

@@ -36,6 +36,13 @@
         Guardar Resultados
       </button>
 
+      @if (progresoMesActual()) {
+        <div class="progreso-banner">
+          <mat-spinner diameter="14" />
+          <span>{{ progresoMesActual() }}</span>
+        </div>
+      }
+
       @if (ultimoGuardadoMesActual()) {
         <div class="guardado-banner" [class.has-errors]="ultimoGuardadoMesActual()!.fallidos_total > 0">
           <mat-icon>{{ ultimoGuardadoMesActual()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
@@ -72,6 +79,13 @@
         Guardar Resultados Mes Anterior
       </button>
 
+      @if (progresoMesAnterior()) {
+        <div class="progreso-banner">
+          <mat-spinner diameter="14" />
+          <span>{{ progresoMesAnterior() }}</span>
+        </div>
+      }
+
       @if (ultimoGuardadoMesAnterior()) {
         <div class="guardado-banner" [class.has-errors]="ultimoGuardadoMesAnterior()!.fallidos_total > 0">
           <mat-icon>{{ ultimoGuardadoMesAnterior()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
@@ -80,6 +94,56 @@
             {{ ultimoGuardadoMesAnterior()!.dias_procesados }} día(s) procesados,
             {{ ultimoGuardadoMesAnterior()!.exitosos_total }} exitosos
             @if (ultimoGuardadoMesAnterior()!.fallidos_total > 0) { , {{ ultimoGuardadoMesAnterior()!.fallidos_total }} fallidos }
+          </span>
+          <a routerLink="/resultados" class="ver-link">Ver resultados <mat-icon>arrow_forward</mat-icon></a>
+        </div>
+      }
+    </div>
+
+    <!-- Mes específico -->
+    <div class="calc-card">
+      <div class="calc-card-header">
+        <div class="calc-icon-box accent">
+          <mat-icon>date_range</mat-icon>
+        </div>
+        <div>
+          <div class="calc-title">Mes Específico</div>
+          <div class="calc-subtitle text-muted">Recalcula cualquier mes/año</div>
+        </div>
+      </div>
+
+      <div class="dia-input-row">
+        <input type="month" [value]="mesEspecifico()"
+               (change)="mesEspecifico.set($any($event.target).value)"
+               class="date-input" />
+        <button mat-stroked-button (click)="guardarResultadosMesEspecifico()"
+                [disabled]="guardandoMesEspecifico() || !mesEspecifico()"
+                matTooltip="Calcula y guarda todos los días del mes seleccionado."
+                class="save-btn save-btn-accent">
+          @if (guardandoMesEspecifico()) {
+            <mat-spinner diameter="16" />
+          } @else {
+            <mat-icon>refresh</mat-icon>
+          }
+          Recalcular Mes
+        </button>
+      </div>
+
+      @if (progresoMesEspecifico()) {
+        <div class="progreso-banner">
+          <mat-spinner diameter="14" />
+          <span>{{ progresoMesEspecifico() }}</span>
+        </div>
+      }
+
+      @if (ultimoGuardadoMesEspecifico()) {
+        <div class="guardado-banner" [class.has-errors]="ultimoGuardadoMesEspecifico()!.fallidos_total > 0">
+          <mat-icon>{{ ultimoGuardadoMesEspecifico()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>
+            Resultados guardados para <strong>{{ ultimoGuardadoMesEspecifico()!.periodo }}</strong> —
+            {{ ultimoGuardadoMesEspecifico()!.dias_procesados }} día(s) procesados,
+            {{ ultimoGuardadoMesEspecifico()!.exitosos_total }} exitosos
+            @if (ultimoGuardadoMesEspecifico()!.fallidos_total > 0) { , {{ ultimoGuardadoMesEspecifico()!.fallidos_total }} fallidos }
           </span>
           <a routerLink="/resultados" class="ver-link">Ver resultados <mat-icon>arrow_forward</mat-icon></a>
         </div>
@@ -195,6 +259,13 @@
         Guardar Resultados
       </button>
 
+      @if (progresoSelMesActual()) {
+        <div class="progreso-banner">
+          <mat-spinner diameter="14" />
+          <span>{{ progresoSelMesActual() }}</span>
+        </div>
+      }
+
       @if (ultimoGuardadoSelMesActual()) {
         <div class="guardado-banner" [class.has-errors]="ultimoGuardadoSelMesActual()!.fallidos_total > 0">
           <mat-icon>{{ ultimoGuardadoSelMesActual()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
@@ -231,6 +302,13 @@
         Guardar Mes Anterior
       </button>
 
+      @if (progresoSelMesAnterior()) {
+        <div class="progreso-banner">
+          <mat-spinner diameter="14" />
+          <span>{{ progresoSelMesAnterior() }}</span>
+        </div>
+      }
+
       @if (ultimoGuardadoSelMesAnterior()) {
         <div class="guardado-banner" [class.has-errors]="ultimoGuardadoSelMesAnterior()!.fallidos_total > 0">
           <mat-icon>{{ ultimoGuardadoSelMesAnterior()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
@@ -239,6 +317,55 @@
             {{ ultimoGuardadoSelMesAnterior()!.dias_procesados }} día(s),
             {{ ultimoGuardadoSelMesAnterior()!.exitosos_total }} exitosos
             @if (ultimoGuardadoSelMesAnterior()!.fallidos_total > 0) { , {{ ultimoGuardadoSelMesAnterior()!.fallidos_total }} fallidos }
+          </span>
+          <a routerLink="/resultados" class="ver-link">Ver <mat-icon>arrow_forward</mat-icon></a>
+        </div>
+      }
+    </div>
+
+    <!-- Mes específico (selectivo) -->
+    <div class="calc-card">
+      <div class="calc-card-header">
+        <div class="calc-icon-box accent">
+          <mat-icon>date_range</mat-icon>
+        </div>
+        <div>
+          <div class="calc-title">Mes Específico</div>
+          <div class="calc-subtitle text-muted">Solo las centrales seleccionadas</div>
+        </div>
+      </div>
+
+      <div class="dia-input-row">
+        <input type="month" [value]="mesEspecificoSel()"
+               (change)="mesEspecificoSel.set($any($event.target).value)"
+               class="date-input" />
+        <button mat-stroked-button (click)="guardarSelMesEspecifico()"
+                [disabled]="guardandoSelMesEspecifico() || !mesEspecificoSel() || !selectedCentrales().length"
+                class="save-btn save-btn-accent">
+          @if (guardandoSelMesEspecifico()) {
+            <mat-spinner diameter="16" />
+          } @else {
+            <mat-icon>refresh</mat-icon>
+          }
+          Recalcular Mes
+        </button>
+      </div>
+
+      @if (progresoSelMesEspecifico()) {
+        <div class="progreso-banner">
+          <mat-spinner diameter="14" />
+          <span>{{ progresoSelMesEspecifico() }}</span>
+        </div>
+      }
+
+      @if (ultimoGuardadoSelMesEspecifico()) {
+        <div class="guardado-banner" [class.has-errors]="ultimoGuardadoSelMesEspecifico()!.fallidos_total > 0">
+          <mat-icon>{{ ultimoGuardadoSelMesEspecifico()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
+          <span>
+            <strong>{{ ultimoGuardadoSelMesEspecifico()!.periodo }}</strong> —
+            {{ ultimoGuardadoSelMesEspecifico()!.dias_procesados }} día(s),
+            {{ ultimoGuardadoSelMesEspecifico()!.exitosos_total }} exitosos
+            @if (ultimoGuardadoSelMesEspecifico()!.fallidos_total > 0) { , {{ ultimoGuardadoSelMesEspecifico()!.fallidos_total }} fallidos }
           </span>
           <a routerLink="/resultados" class="ver-link">Ver <mat-icon>arrow_forward</mat-icon></a>
         </div>

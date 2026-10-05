@@ -174,7 +174,7 @@ async def _compilar_instalador(hostname: str, pfx_b64: str, pfx_password: str,
     return resp.json()
 
 
-def _crear_usuario_mysql(hostname: str, ip_vpn: str):
+def _crear_usuario_mysql(hostname: str, ip_vpn: str, ip_mpls: str = ""):
     cn = f"{hostname}.vpn" if ip_vpn else (f"{hostname}.mpls" if ip_mpls else hostname)
     subject = f"/O=BLC/CN={cn}"
     admin_url = (
@@ -281,7 +281,7 @@ async def generar_instaladores(req: InstaladorRequest, request: Request, db: Ses
                     "message": f"Creando usuario MySQL {hostname}...",
                 })
                 try:
-                    mysql_results[sotr] = _crear_usuario_mysql(hostname, ip_vpn)
+                    mysql_results[sotr] = _crear_usuario_mysql(hostname, ip_vpn, ip_mpls)
                 except Exception as e:
                     mysql_results[sotr] = {"status": "error", "error": str(e)}
 

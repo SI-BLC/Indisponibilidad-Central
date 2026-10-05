@@ -59,14 +59,22 @@
       <!-- Enlaces multi-select -->
       <mat-form-field appearance="outline" class="enlaces-field">
         <mat-label>Enlaces</mat-label>
-        <mat-select formControlName="idsEnlace" multiple [disabled]="enlaces().length === 0">
+        <mat-select formControlName="idsEnlace" multiple [disabled]="enlaces().length === 0"
+          (openedChange)="onEnlaceSelectOpenChange($event)">
           @if (enlaces().length > 0) {
+            <div class="select-search-row" (click)="$event.stopPropagation()">
+              <mat-icon class="search-icon">search</mat-icon>
+              <input class="select-search-input" placeholder="Buscar enlace..."
+                [value]="enlaceFilter()"
+                (input)="enlaceFilter.set($any($event.target).value)"
+                (keydown)="$event.stopPropagation()" />
+            </div>
             <div class="select-all-row" (click)="toggleTodos(); $event.stopPropagation()">
               <mat-checkbox [checked]="todosSeleccionados()" (click)="$event.preventDefault()">
                 Todos los enlaces
               </mat-checkbox>
             </div>
-            @for (e of enlaces(); track e.id) {
+            @for (e of filteredEnlaces(); track e.id) {
               <mat-option [value]="e.id">{{ e.nombre }}</mat-option>
             }
           }

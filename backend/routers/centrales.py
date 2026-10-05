@@ -4,13 +4,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 import httpx
 from database import get_db
+from config import settings
 import models
 import schemas
 
 router = APIRouter(prefix="/centrales", tags=["Centrales"])
 
 
-@router.get("/", response_model=list[schemas.CentralOut])
+@router.get("", response_model=list[schemas.CentralOut])
 def get_centrales(db: Session = Depends(get_db)):
     return db.query(models.Central).all()
 
@@ -23,7 +24,7 @@ def get_central(central_id: int, db: Session = Depends(get_db)):
     return central
 
 
-@router.post("/", response_model=schemas.CentralOut, status_code=201)
+@router.post("", response_model=schemas.CentralOut, status_code=201)
 def crear_central(central: schemas.CentralCreate, db: Session = Depends(get_db)):
     db_central = models.Central(**central.model_dump())
     db.add(db_central)
@@ -72,27 +73,41 @@ def eliminar_central(central_id: int, db: Session = Depends(get_db)):
     db.commit()
 
 
+def _node_base_url(ip: str, ssl: int = 0) -> str:
+    if ssl:
+        return f"https://{ip}:8443"
+    return f"http://{ip}:8089"
+
+
+def _node_auth(ssl: int = 0) -> httpx.BasicAuth | None:
+    if ssl and settings.NODE_HTTPS_USER:
+        return httpx.BasicAuth(settings.NODE_HTTPS_USER, settings.NODE_HTTPS_PASS)
+    return None
+
+
 @router.get("/checkenlaces/{ip}", response_class=PlainTextResponse)
-def check_enlaces(ip: str):
+def check_enlaces(ip: str, ssl: int = 0):
+    base = _node_base_url(ip, ssl)
     try:
-        with httpx.Client(timeout=30) as client:
-            response = client.get(f"http://{ip}:8089/checkenlaces")
+        with httpx.Client(timeout=30, verify=False, auth=_node_auth(ssl)) as client:
+            response = client.get(f"{base}/checkenlaces")
             response.raise_for_status()
             return response.text
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail=f"Timeout al conectar con {ip}:8089")
+        raise HTTPException(status_code=504, detail=f"Timeout al conectar con {base}")
     except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=f"Error al conectar con {ip}:8089 — {e}")
+        raise HTTPException(status_code=502, detail=f"Error al conectar con {base} — {e}")
 
 
 @router.get("/checkgrupos/{ip}", response_class=PlainTextResponse)
-def check_grupos(ip: str, nombre_enlace: str):
+def check_grupos(ip: str, nombre_enlace: str, ssl: int = 0):
+    base = _node_base_url(ip, ssl)
     try:
-        with httpx.Client(timeout=30) as client:
-            response = client.get(f"http://{ip}:8089/checkgrupos", params={"enlace": nombre_enlace})
+        with httpx.Client(timeout=30, verify=False, auth=_node_auth(ssl)) as client:
+            response = client.get(f"{base}/checkgrupos", params={"enlace": nombre_enlace})
             response.raise_for_status()
             return response.text
     except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail=f"Timeout al conectar con {ip}:8089")
+        raise HTTPException(status_code=504, detail=f"Timeout al conectar con {base}")
     except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=f"Error al conectar con {ip}:8089 — {e}")
+        raise HTTPException(status_code=502, detail=f"Error al conectar con {base} — {e}")

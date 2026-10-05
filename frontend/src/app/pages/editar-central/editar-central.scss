@@ -1,11 +1,11 @@
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
 
 .selector-panel {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
   padding: 20px 20px 4px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-card);
   margin-bottom: 20px;
 }
 
@@ -22,7 +22,7 @@
 
 .panel-title {
   display: flex; align-items: center; gap: 8px;
-  font-size: 0.78rem; font-weight: 700; color: #7c839d;
+  font-size: 0.78rem; font-weight: 700; color: var(--text-4);
   text-transform: uppercase; letter-spacing: .08em;
   margin-bottom: 12px;
   mat-icon { font-size: 15px; width: 15px; height: 15px; }
@@ -35,7 +35,7 @@
   cursor: pointer;
   transition: background 0.15s;
 
-  &:hover { background: rgba(255,255,255,.04); }
+  &:hover { background: var(--bg-hover); }
   &.active { background: rgba(83,155,255,.1); .item-nemo { color: #539bff; } }
 }
 
@@ -48,17 +48,17 @@
 }
 
 .item-info { flex: 1; overflow: hidden; }
-.item-nemo { font-size: 0.85rem; font-weight: 600; color: #e3e5ef; }
+.item-nemo { font-size: 0.85rem; font-weight: 600; color: var(--text-1); }
 .item-tipo { font-size: 0.72rem; }
 
 .editor-area { display: flex; flex-direction: column; gap: 16px; }
 
 .edit-panel {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 
@@ -74,17 +74,17 @@
 }
 
 .enlaces-table { width: 100%; margin-bottom: 8px; }
-.mono-id { font-family: monospace; color: #7c839d; font-size: 0.85rem; }
-.delete-btn { color: #3f4460 !important; &:hover { color: #ff6b6b !important; } }
+.mono-id { font-family: monospace; color: var(--text-4); font-size: 0.85rem; }
+.delete-btn { color: var(--text-6) !important; &:hover { color: var(--val-red) !important; } }
 
-.add-enlace-form { padding-top: 16px; border-top: 1px solid rgba(255,255,255,.06); margin-top: 8px; }
+.add-enlace-form { padding-top: 16px; border-top: 1px solid var(--border-1); margin-top: 8px; }
 .add-row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
 .flex-1 { flex: 1; min-width: 160px; }
 .add-row button { height: 56px; font-weight: 700; border-radius: 8px !important; }
 
 .select-prompt {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 64px; color: #3f4460; text-align: center;
+  padding: 64px; color: var(--text-6); text-align: center;
   mat-icon { font-size: 48px; width: 48px; height: 48px; margin-bottom: 12px; opacity: .3; }
   p { margin: 0; font-size: 0.9rem; }
 }
@@ -92,7 +92,7 @@
 .delete-central-section {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: 1px solid var(--border-1);
 }
 
 .delete-central-btn {
@@ -111,7 +111,7 @@
 
 .enlaces-obtenidos-list {
   margin-top: 8px;
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top: 1px solid var(--border-1);
   padding-top: 12px;
 }
 
@@ -121,14 +121,14 @@
   padding: 6px 8px;
   border-radius: 8px;
   transition: background 0.15s;
-  &:hover { background: rgba(255,255,255,.03); }
+  &:hover { background: var(--bg-hover); }
 }
 
 .enlace-obtenido-nombre {
   flex: 1;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #e3e5ef;
+  color: var(--text-1);
   font-family: monospace;
 }
 
@@ -136,16 +136,16 @@
   font-size: .7rem; font-weight: 700; border-radius: 20px;
   padding: 2px 8px; margin: 0 6px; flex-shrink: 0;
   &.nuevo  { background: rgba(83,155,255,.12); border: 1px solid rgba(83,155,255,.3); color: #539bff; }
-  &.existe { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #7c839d; }
+  &.existe { background: var(--border-2); border: 1px solid var(--border-3); color: var(--text-4); }
 }
 
 .enlace-edit-input {
   flex: 1;
-  background: rgba(255,255,255,.06);
+  background: var(--border-1);
   border: 1px solid rgba(83,155,255,.4);
   border-radius: 6px;
   padding: 6px 10px;
-  color: #e3e5ef;
+  color: var(--text-1);
   font-size: 0.9rem;
   font-family: monospace;
   outline: none;

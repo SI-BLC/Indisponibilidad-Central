@@ -8,7 +8,7 @@ import schemas
 router = APIRouter(prefix="/mantenimientos", tags=["Mantenimientos"])
 
 
-@router.get("/", response_model=list[schemas.MantenimientoOut])
+@router.get("", response_model=list[schemas.MantenimientoOut])
 def get_mantenimientos(idenlace: int | None = None, db: Session = Depends(get_db)):
     query = db.query(models.Mantenimiento)
     if idenlace is not None:
@@ -16,7 +16,7 @@ def get_mantenimientos(idenlace: int | None = None, db: Session = Depends(get_db
     return query.order_by(models.Mantenimiento.inicio).all()
 
 
-@router.post("/", response_model=schemas.MantenimientoOut, status_code=201)
+@router.post("", response_model=schemas.MantenimientoOut, status_code=201)
 def crear_mantenimiento(
     mant: schemas.MantenimientoCreate, db: Session = Depends(get_db)
 ):

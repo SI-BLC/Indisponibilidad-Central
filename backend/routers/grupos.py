@@ -7,7 +7,7 @@ import schemas
 router = APIRouter(prefix="/grupos", tags=["Grupos"])
 
 
-@router.get("/", response_model=list[schemas.GrupoOut])
+@router.get("", response_model=list[schemas.GrupoOut])
 def get_grupos(idenlace: int | None = None, db: Session = Depends(get_db)):
     query = db.query(models.Grupo)
     if idenlace is not None:
@@ -15,7 +15,7 @@ def get_grupos(idenlace: int | None = None, db: Session = Depends(get_db)):
     return query.all()
 
 
-@router.post("/", response_model=schemas.GrupoOut, status_code=201)
+@router.post("", response_model=schemas.GrupoOut, status_code=201)
 def crear_grupo(grupo: schemas.GrupoCreate, db: Session = Depends(get_db)):
     db_grupo = models.Grupo(**grupo.model_dump())
     db.add(db_grupo)

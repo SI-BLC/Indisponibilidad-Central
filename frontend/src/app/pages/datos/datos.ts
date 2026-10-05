@@ -45,6 +45,12 @@ export class Datos implements OnInit {
     if (!c || typeof c === 'string') return '';
     return c.nemo;
   };
+  enlaceFilter = signal('');
+  filteredEnlaces = computed(() => {
+    const term = this.enlaceFilter().toUpperCase();
+    if (!term) return this.enlaces();
+    return this.enlaces().filter(e => e.nombre.toUpperCase().includes(term));
+  });
   enlaces   = signal<Enlace[]>([]);
   conData   = signal<ConItem[]>([]);
   datData   = signal<DatItem[]>([]);
@@ -107,6 +113,7 @@ export class Datos implements OnInit {
 
     this.form.controls.idCentral.valueChanges.subscribe(id => {
       this.enlaces.set([]);
+      this.enlaceFilter.set('');
       this.form.patchValue({ idsEnlace: [] }, { emitEvent: false });
       if (id != null) {
         this.api.getEnlaces(id).subscribe(e => {
@@ -115,6 +122,10 @@ export class Datos implements OnInit {
         });
       }
     });
+  }
+
+  onEnlaceSelectOpenChange(opened: boolean) {
+    if (!opened) this.enlaceFilter.set('');
   }
 
   toggleTodos() {

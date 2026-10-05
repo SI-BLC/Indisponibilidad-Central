@@ -31,10 +31,17 @@ export class Calculos implements OnInit {
 
   // --- Cards globales (todas las centrales) ---
   guardandoMesActual = signal(false);
+  progresoMesActual = signal('');
   ultimoGuardadoMesActual = signal<GuardarResultadosMesResponse | null>(null);
 
   guardandoMesAnterior = signal(false);
+  progresoMesAnterior = signal('');
   ultimoGuardadoMesAnterior = signal<GuardarResultadosMesResponse | null>(null);
+
+  mesEspecifico = signal(this._mesAnteriorStr());
+  guardandoMesEspecifico = signal(false);
+  progresoMesEspecifico = signal('');
+  ultimoGuardadoMesEspecifico = signal<GuardarResultadosMesResponse | null>(null);
 
   fechaDia = signal(this._ayer());
   guardandoDia = signal(false);
@@ -53,10 +60,17 @@ export class Calculos implements OnInit {
   });
 
   guardandoSelMesActual = signal(false);
+  progresoSelMesActual = signal('');
   ultimoGuardadoSelMesActual = signal<GuardarResultadosMesResponse | null>(null);
 
   guardandoSelMesAnterior = signal(false);
+  progresoSelMesAnterior = signal('');
   ultimoGuardadoSelMesAnterior = signal<GuardarResultadosMesResponse | null>(null);
+
+  mesEspecificoSel = signal(this._mesAnteriorStr());
+  guardandoSelMesEspecifico = signal(false);
+  progresoSelMesEspecifico = signal('');
+  ultimoGuardadoSelMesEspecifico = signal<GuardarResultadosMesResponse | null>(null);
 
   fechaDiaSel = signal(this._ayer());
   guardandoSelDia = signal(false);
@@ -79,14 +93,40 @@ export class Calculos implements OnInit {
     return d.toISOString().split('T')[0];
   }
 
+  private _mesAnteriorStr(): string {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  private _suscribirMes(
+    obs: ReturnType<typeof this.api.guardarResultadosMes>,
+    guardando: ReturnType<typeof signal<boolean>>,
+    progreso: ReturnType<typeof signal<string>>,
+    resultado: ReturnType<typeof signal<GuardarResultadosMesResponse | null>>
+  ) {
+    obs.subscribe({
+      next: (ev) => {
+        if (ev.type === 'progress') {
+          progreso.set(`Día ${ev['dia_num']}/${ev['total_dias']} (${ev['dia']})`);
+        } else if (ev.type === 'done') {
+          resultado.set(ev as any);
+          guardando.set(false);
+          progreso.set('');
+        } else if (ev.type === 'error') {
+          guardando.set(false);
+          progreso.set('');
+        }
+      },
+      error: () => { guardando.set(false); progreso.set(''); },
+    });
+  }
+
   // --- Acciones globales ---
   guardarResultadosMesActual() {
     this.guardandoMesActual.set(true);
     this.ultimoGuardadoMesActual.set(null);
-    this.api.guardarResultadosMes().subscribe({
-      next: (res) => { this.ultimoGuardadoMesActual.set(res); this.guardandoMesActual.set(false); },
-      error: () => this.guardandoMesActual.set(false),
-    });
+    this._suscribirMes(this.api.guardarResultadosMes(), this.guardandoMesActual, this.progresoMesActual, this.ultimoGuardadoMesActual);
   }
 
   guardarResultadosMesAnterior() {
@@ -94,10 +134,15 @@ export class Calculos implements OnInit {
     const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
     this.guardandoMesAnterior.set(true);
     this.ultimoGuardadoMesAnterior.set(null);
-    this.api.guardarResultadosMes(mesAnterior.getFullYear(), mesAnterior.getMonth() + 1).subscribe({
-      next: (res) => { this.ultimoGuardadoMesAnterior.set(res); this.guardandoMesAnterior.set(false); },
-      error: () => this.guardandoMesAnterior.set(false),
-    });
+    this._suscribirMes(this.api.guardarResultadosMes(mesAnterior.getFullYear(), mesAnterior.getMonth() + 1), this.guardandoMesAnterior, this.progresoMesAnterior, this.ultimoGuardadoMesAnterior);
+  }
+
+  guardarResultadosMesEspecifico() {
+    const [y, m] = this.mesEspecifico().split('-').map(Number);
+    if (!y || !m) return;
+    this.guardandoMesEspecifico.set(true);
+    this.ultimoGuardadoMesEspecifico.set(null);
+    this._suscribirMes(this.api.guardarResultadosMes(y, m), this.guardandoMesEspecifico, this.progresoMesEspecifico, this.ultimoGuardadoMesEspecifico);
   }
 
   guardarResultadosDia() {
@@ -127,10 +172,7 @@ export class Calculos implements OnInit {
     if (!ids.length) return;
     this.guardandoSelMesActual.set(true);
     this.ultimoGuardadoSelMesActual.set(null);
-    this.api.guardarResultadosMes(undefined, undefined, ids).subscribe({
-      next: (res) => { this.ultimoGuardadoSelMesActual.set(res); this.guardandoSelMesActual.set(false); },
-      error: () => this.guardandoSelMesActual.set(false),
-    });
+    this._suscribirMes(this.api.guardarResultadosMes(undefined, undefined, ids), this.guardandoSelMesActual, this.progresoSelMesActual, this.ultimoGuardadoSelMesActual);
   }
 
   guardarSelMesAnterior() {
@@ -140,10 +182,17 @@ export class Calculos implements OnInit {
     const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
     this.guardandoSelMesAnterior.set(true);
     this.ultimoGuardadoSelMesAnterior.set(null);
-    this.api.guardarResultadosMes(mesAnterior.getFullYear(), mesAnterior.getMonth() + 1, ids).subscribe({
-      next: (res) => { this.ultimoGuardadoSelMesAnterior.set(res); this.guardandoSelMesAnterior.set(false); },
-      error: () => this.guardandoSelMesAnterior.set(false),
-    });
+    this._suscribirMes(this.api.guardarResultadosMes(mesAnterior.getFullYear(), mesAnterior.getMonth() + 1, ids), this.guardandoSelMesAnterior, this.progresoSelMesAnterior, this.ultimoGuardadoSelMesAnterior);
+  }
+
+  guardarSelMesEspecifico() {
+    const ids = this._selectedIds();
+    if (!ids.length) return;
+    const [y, m] = this.mesEspecificoSel().split('-').map(Number);
+    if (!y || !m) return;
+    this.guardandoSelMesEspecifico.set(true);
+    this.ultimoGuardadoSelMesEspecifico.set(null);
+    this._suscribirMes(this.api.guardarResultadosMes(y, m, ids), this.guardandoSelMesEspecifico, this.progresoSelMesEspecifico, this.ultimoGuardadoSelMesEspecifico);
   }
 
   guardarSelDia() {

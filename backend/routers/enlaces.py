@@ -7,7 +7,7 @@ import schemas
 router = APIRouter(prefix="/enlaces", tags=["Enlaces"])
 
 
-@router.get("/", response_model=list[schemas.EnlaceOut])
+@router.get("", response_model=list[schemas.EnlaceOut])
 def get_enlaces(idcentral: int | None = None, db: Session = Depends(get_db)):
     query = db.query(models.Enlace)
     if idcentral is not None:
@@ -23,7 +23,7 @@ def get_enlace(enlace_id: int, db: Session = Depends(get_db)):
     return enlace
 
 
-@router.post("/", response_model=schemas.EnlaceOut, status_code=201)
+@router.post("", response_model=schemas.EnlaceOut, status_code=201)
 def crear_enlace(enlace: schemas.EnlaceCreate, db: Session = Depends(get_db)):
     db_enlace = models.Enlace(**enlace.model_dump())
     db.add(db_enlace)

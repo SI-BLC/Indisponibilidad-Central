@@ -58,7 +58,7 @@
           mat-flat-button
           class="login-btn"
           type="submit"
-          [disabled]="loading() || !username || !password"
+          [disabled]="loading() || ssoChecking() || !username || !password"
         >
           @if (loading()) {
             <mat-spinner diameter="20" />
@@ -68,6 +68,26 @@
           }
         </button>
       </form>
+
+      @if (ssoEnabled()) {
+        <div class="sso-divider">
+          <span>o</span>
+        </div>
+        <button
+          mat-stroked-button
+          class="sso-btn"
+          (click)="trySso()"
+          [disabled]="loading() || ssoChecking()"
+        >
+          @if (ssoChecking()) {
+            <mat-spinner diameter="20" />
+            <span>Autenticando...</span>
+          } @else {
+            <mat-icon>desktop_windows</mat-icon>
+            <span>Iniciar con Windows</span>
+          }
+        </button>
+      }
     </mat-card-content>
   </mat-card>
 </div>

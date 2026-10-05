@@ -1,17 +1,17 @@
 .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
 
 .form-panel {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-card);
 }
 
 .panel-title {
   display: flex; align-items: center; gap: 8px;
-  font-size: 0.8rem; font-weight: 600; color: #7c839d;
+  font-size: 0.8rem; font-weight: 600; color: var(--text-4);
   text-transform: uppercase; letter-spacing: .08em;
   margin-bottom: 16px;
   mat-icon { font-size: 16px; width: 16px; height: 16px; }
@@ -32,30 +32,30 @@
 }
 
 .table-panel {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-card);
 }
 
 .table-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid var(--border-1);
 }
 
 .link-id {
   font-size: 0.8rem; font-weight: 600;
-  background: rgba(255,255,255,.06);
+  background: var(--border-1);
   border-radius: 6px; padding: 2px 8px;
   font-family: monospace;
-  color: #7c839d;
+  color: var(--text-4);
 }
 
 table { width: 100%; }
 
 .delete-btn {
-  color: #3f4460 !important;
-  &:hover { color: #ff6b6b !important; }
+  color: var(--text-6) !important;
+  &:hover { color: var(--val-red) !important; }
 }

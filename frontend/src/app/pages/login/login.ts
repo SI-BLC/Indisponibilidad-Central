@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -23,7 +23,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login {
+export class Login implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
@@ -32,6 +32,32 @@ export class Login {
   hidePassword = signal(true);
   loading = signal(false);
   errorMessage = signal('');
+
+  ssoEnabled = signal(false);
+  ssoChecking = signal(false);
+
+  async ngOnInit() {
+    if (this.auth.isLoggedIn()) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+    try {
+      const resp = await fetch('/api/auth/sso-check');
+      if (resp.ok) this.ssoEnabled.set(true);
+    } catch {}
+  }
+
+  async trySso() {
+    this.ssoChecking.set(true);
+    this.errorMessage.set('');
+    const ok = await this.auth.trySso();
+    if (ok) {
+      this.router.navigate(['/dashboard']);
+    } else {
+      this.ssoChecking.set(false);
+      this.errorMessage.set('No se pudo autenticar con Windows. Usá usuario y contraseña.');
+    }
+  }
 
   onSubmit(): void {
     if (!this.username || !this.password) return;

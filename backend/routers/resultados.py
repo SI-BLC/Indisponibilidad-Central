@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import date, datetime, timedelta
 from typing import Optional, List
-import calendar
-from database import get_db
+import calendar, json
+from database import get_db, SessionLocal
 import models
 import schemas
 from services.reporte_service import guardar_resultados_dia, guardar_resultados_mes, _detalle_central, _a_hora_local
@@ -33,18 +34,59 @@ def guardar_resultados(
     }
 
 
-@router.post("/guardar-mes", summary="Calcular y guardar resultados del mes en curso (sobreescribe existentes)")
+@router.post("/guardar-mes", summary="Calcular y guardar resultados del mes (con streaming de progreso)")
 def guardar_resultados_mes_endpoint(
     year: Optional[int] = Query(default=None, description="Año (por defecto: año actual)"),
     month: Optional[int] = Query(default=None, description="Mes (1-12, por defecto: mes actual)"),
     id_centrales: Optional[List[int]] = Query(default=None, description="IDs de centrales a calcular (vacío = todas)"),
-    db: Session = Depends(get_db),
 ):
     hoy = date.today()
     y = year if year else hoy.year
     m = month if month else hoy.month
-    resultado = guardar_resultados_mes(y, m, db, id_centrales or None)
-    return resultado
+
+    primer_dia = date(y, m, 1)
+    ultimo_dia_mes = date(y, m, calendar.monthrange(y, m)[1])
+    ultimo_dia = min(hoy - timedelta(days=1), ultimo_dia_mes)
+
+    def generate():
+        db = SessionLocal()
+        try:
+            if ultimo_dia < primer_dia:
+                yield f"data: {json.dumps({'type': 'done', 'periodo': f'{y}-{m:02d}', 'dias_procesados': 0, 'exitosos_total': 0, 'fallidos_total': 0})}\n\n"
+                return
+
+            total_dias = (ultimo_dia - primer_dia).days + 1
+            exitosos_total = 0
+            fallidos_total = 0
+            detalle_dias = []
+
+            dia_actual = primer_dia
+            dia_num = 0
+            while dia_actual <= ultimo_dia:
+                dia_num += 1
+                yield f"data: {json.dumps({'type': 'progress', 'dia': str(dia_actual), 'dia_num': dia_num, 'total_dias': total_dias})}\n\n"
+
+                detalle = guardar_resultados_dia(dia_actual, db, id_centrales or None)
+                ok = sum(1 for r in detalle if r.get("ok"))
+                fallidos = len(detalle) - ok
+                exitosos_total += ok
+                fallidos_total += fallidos
+                detalle_dias.append({
+                    "fecha": str(dia_actual),
+                    "procesados": len(detalle),
+                    "exitosos": ok,
+                    "fallidos": fallidos,
+                })
+
+                dia_actual += timedelta(days=1)
+
+            yield f"data: {json.dumps({'type': 'done', 'periodo': f'{y}-{m:02d}', 'dias_procesados': len(detalle_dias), 'exitosos_total': exitosos_total, 'fallidos_total': fallidos_total, 'detalle_dias': detalle_dias})}\n\n"
+        except Exception as exc:
+            yield f"data: {json.dumps({'type': 'error', 'detalle': str(exc)})}\n\n"
+        finally:
+            db.close()
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 
 @router.get("/cortes", response_model=list[schemas.CorteReporteOut])
@@ -124,7 +166,7 @@ def get_detalle_central(
     return resultado
 
 
-@router.get("/", response_model=list[schemas.ResultadoReporteOut])
+@router.get("", response_model=list[schemas.ResultadoReporteOut])
 def get_resultados(
     id_central: Optional[int] = Query(default=None),
     id_enlace: Optional[int] = Query(default=None),

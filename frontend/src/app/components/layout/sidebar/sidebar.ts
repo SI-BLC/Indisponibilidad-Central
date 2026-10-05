@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { ThemeService } from '../../../services/theme';
 
 interface NavItem {
   label: string;
@@ -17,6 +18,8 @@ interface NavItem {
   styleUrl: './sidebar.scss',
 })
 export class Sidebar {
+  readonly theme = inject(ThemeService);
+
   readonly navItems: NavItem[] = [
     { label: 'Inicio', icon: 'home', route: '/welcome' },
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
@@ -36,6 +39,7 @@ export class Sidebar {
     { label: 'Cálculos', icon: 'calculate', route: '/calculos' },
     { label: 'Carga Manual', icon: 'upload', route: '/carga-manual' },
     { label: 'Instaladores', icon: 'security', route: '/instaladores' },
+    { label: 'RIS', icon: 'description', route: '/ris' },
   ];
 
   expandedGroup: string | null = null;

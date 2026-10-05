@@ -17,10 +17,17 @@ class Settings(BaseSettings):
     LDAP_BIND_PASSWORD: str = ""
     LDAP_GROUP_PREFIX: str = "Security - BLC PG"
 
+    # Kerberos SSO
+    KRB5_KEYTAB: str = "/etc/krb5.keytab"
+
     # JWT
     JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_HOURS: int = 8
+
+    # Node HTTPS auth
+    NODE_HTTPS_USER: str = "admin"
+    NODE_HTTPS_PASS: str = ""
 
     # Cert-Helper
     CERT_HELPER_URL: str = "http://10.230.2.115:8500"

@@ -3,96 +3,130 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import datetime
 from pydantic import BaseModel
+from typing import Optional
 from database import get_db
 
 router = APIRouter(prefix="/comentarios", tags=["Comentarios"])
 
 
-class ComentarioBody(BaseModel):
+class ComentarioCreate(BaseModel):
+    id_central: int
+    fecha_dia: str
+    tipo: str  # "corte" | "dat"
+    fecha_inicio: str
+    fecha_fin: str
     texto: str
+
+
+class ComentarioUpdate(BaseModel):
+    texto: str
+
+
+COLS = "id, id_central, fecha_dia, tipo, fecha_inicio, fecha_fin, texto, usuario, created_at, updated_at"
 
 
 def _row_to_dict(row) -> dict:
     return {
-        "id":         row[0],
-        "id_central": row[1],
-        "fecha":      str(row[2]),
-        "texto":      row[3],
-        "usuario":    row[4],
-        "created_at": row[5].isoformat() if row[5] else None,
-        "updated_at": row[6].isoformat() if row[6] else None,
+        "id":           row[0],
+        "id_central":   row[1],
+        "fecha_dia":    str(row[2]),
+        "tipo":         row[3],
+        "fecha_inicio": row[4],
+        "fecha_fin":    row[5],
+        "texto":        row[6],
+        "usuario":      row[7],
+        "created_at":   row[8].isoformat() if row[8] else None,
+        "updated_at":   row[9].isoformat() if row[9] else None,
     }
 
 
-def _get_row(id_central: int, fecha: str, db: Session):
-    return db.execute(
-        text("""SELECT id, id_central, fecha, texto, usuario, created_at, updated_at
-                FROM comentarios WHERE id_central=:c AND fecha=:f LIMIT 1"""),
-        {"c": id_central, "f": fecha}
-    ).fetchone()
+@router.get("")
+def listar_comentarios(
+    id_central: int,
+    fecha_dia: str,
+    tipo: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    conditions = ["id_central = :c", "fecha_dia = :f"]
+    params: dict = {"c": id_central, "f": fecha_dia}
+    if tipo:
+        conditions.append("tipo = :t")
+        params["t"] = tipo
+    where = " AND ".join(conditions)
+    rows = db.execute(
+        text(f"SELECT {COLS} FROM comentarios WHERE {where} ORDER BY created_at"),
+        params,
+    ).fetchall()
+    return [_row_to_dict(r) for r in rows]
 
 
-@router.get("/{id_central}/{fecha}")
-def get_comentario(id_central: int, fecha: str, db: Session = Depends(get_db)):
-    row = _get_row(id_central, fecha, db)
-    return _row_to_dict(row) if row else None
-
-
-@router.post("/{id_central}/{fecha}", status_code=201)
+@router.post("", status_code=201)
 def crear_comentario(
-    id_central: int, fecha: str,
-    body: ComentarioBody,
+    body: ComentarioCreate,
     request: Request,
     db: Session = Depends(get_db),
 ):
+    if body.tipo not in ("corte", "dat"):
+        raise HTTPException(400, "tipo debe ser 'corte' o 'dat'")
     usuario = request.state.user["sub"]
-    if _get_row(id_central, fecha, db):
-        raise HTTPException(status_code=409, detail="Ya existe un comentario para este resultado")
     now = datetime.now()
     db.execute(
-        text("""INSERT INTO comentarios (id_central, fecha, texto, usuario, created_at, updated_at)
-                VALUES (:c, :f, :t, :u, :ca, :ua)"""),
-        {"c": id_central, "f": fecha, "t": body.texto, "u": usuario, "ca": now, "ua": now},
+        text("""INSERT INTO comentarios
+                (id_central, fecha_dia, tipo, fecha_inicio, fecha_fin, texto, usuario, created_at, updated_at)
+                VALUES (:c, :fd, :t, :fi, :ff, :txt, :u, :ca, :ua)"""),
+        {
+            "c": body.id_central, "fd": body.fecha_dia, "t": body.tipo,
+            "fi": body.fecha_inicio, "ff": body.fecha_fin,
+            "txt": body.texto, "u": usuario, "ca": now, "ua": now,
+        },
     )
+    new_id = db.execute(text("SELECT LAST_INSERT_ID()")).scalar()
     db.commit()
-    return _row_to_dict(_get_row(id_central, fecha, db))
+    row = db.execute(
+        text(f"SELECT {COLS} FROM comentarios WHERE id = :id"), {"id": new_id}
+    ).fetchone()
+    return _row_to_dict(row)
 
 
-@router.put("/{id_central}/{fecha}")
+@router.put("/{id_comentario}")
 def actualizar_comentario(
-    id_central: int, fecha: str,
-    body: ComentarioBody,
+    id_comentario: int,
+    body: ComentarioUpdate,
     request: Request,
     db: Session = Depends(get_db),
 ):
     usuario = request.state.user["sub"]
-    row = _get_row(id_central, fecha, db)
+    row = db.execute(
+        text(f"SELECT {COLS} FROM comentarios WHERE id = :id"), {"id": id_comentario}
+    ).fetchone()
     if not row:
-        raise HTTPException(status_code=404, detail="Comentario no encontrado")
-    if row[4] != usuario:
-        raise HTTPException(status_code=403, detail="Solo el autor puede editar este comentario")
+        raise HTTPException(404, "Comentario no encontrado")
+    if row[7] != usuario:
+        raise HTTPException(403, "Solo el autor puede editar este comentario")
     db.execute(
-        text("UPDATE comentarios SET texto=:t, updated_at=:ua WHERE id_central=:c AND fecha=:f"),
-        {"t": body.texto, "ua": datetime.now(), "c": id_central, "f": fecha},
+        text("UPDATE comentarios SET texto = :t, updated_at = :ua WHERE id = :id"),
+        {"t": body.texto, "ua": datetime.now(), "id": id_comentario},
     )
     db.commit()
-    return _row_to_dict(_get_row(id_central, fecha, db))
+    row = db.execute(
+        text(f"SELECT {COLS} FROM comentarios WHERE id = :id"), {"id": id_comentario}
+    ).fetchone()
+    return _row_to_dict(row)
 
 
-@router.delete("/{id_central}/{fecha}", status_code=204)
+@router.delete("/{id_comentario}", status_code=204)
 def eliminar_comentario(
-    id_central: int, fecha: str,
+    id_comentario: int,
     request: Request,
     db: Session = Depends(get_db),
 ):
     usuario = request.state.user["sub"]
-    row = _get_row(id_central, fecha, db)
+    row = db.execute(
+        text(f"SELECT {COLS} FROM comentarios WHERE id = :id"), {"id": id_comentario}
+    ).fetchone()
     if not row:
-        raise HTTPException(status_code=404, detail="Comentario no encontrado")
-    if row[4] != usuario:
-        raise HTTPException(status_code=403, detail="Solo el autor puede eliminar este comentario")
-    db.execute(
-        text("DELETE FROM comentarios WHERE id_central=:c AND fecha=:f"),
-        {"c": id_central, "f": fecha},
-    )
+        raise HTTPException(404, "Comentario no encontrado")
+    if row[7] != usuario:
+        raise HTTPException(403, "Solo el autor puede eliminar este comentario")
+    db.execute(text("DELETE FROM comentarios WHERE id = :id"), {"id": id_comentario})
     db.commit()

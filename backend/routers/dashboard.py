@@ -7,7 +7,7 @@ import schemas
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
-@router.get("/", response_model=list[schemas.DashboardCentral])
+@router.get("", response_model=list[schemas.DashboardCentral])
 def get_dashboard(db: Session = Depends(get_db)):
     centrales = db.query(models.Central).all()
     resultado = []

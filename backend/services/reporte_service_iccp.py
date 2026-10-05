@@ -636,8 +636,9 @@ def _construir_timeline_tipo2_iccp(id_prim: int, id_bck: int,
 
 
 def _calcular_tipo2_iccp(id_prim: int, id_bck: int, ini: datetime, fin: datetime,
-                          db: Session) -> tuple[float, bool]:
-    """Calcula indisponibilidad total para central ICCP tipo 2."""
+                          db: Session) -> tuple[float, float, float, bool]:
+    """Calcula indisponibilidad para central ICCP tipo 2.
+    Retorna (ind_cortes_seg, ind_datos_seg, ind_total_seg, tiene_inconsistencia)."""
     tol_c = int(db.execute(text("SELECT tol_cortes FROM configuracion LIMIT 1")).scalar() or 120)
     segments, cortes_ef, inconsistencias, corte_ef_seg = \
         _construir_timeline_tipo2_iccp(id_prim, id_bck, ini, fin, db)
@@ -658,46 +659,51 @@ def _calcular_tipo2_iccp(id_prim: int, id_bck: int, ini: datetime, fin: datetime
     ind_datos_seg = ind_datos_prim * prim_frac + ind_datos_bck * bck_frac
     ind_total_seg = corte_ef_seg_neto + ind_datos_seg
 
-    return ind_total_seg, len(inconsistencias) > 0
+    return corte_ef_seg_neto, ind_datos_seg, ind_total_seg, len(inconsistencias) > 0
 
 
 def calcular_ind_central_iccp(id_central: int, ini: datetime, fin: datetime,
-                               db: Session) -> tuple[float | None, bool]:
-    """Dispatcher ICCP por tipo de central."""
+                               db: Session) -> tuple[float | None, float | None, float | None, bool]:
+    """Dispatcher ICCP por tipo de central.
+    Retorna (ind_cortes_seg, ind_datos_seg, ind_total_seg, inconsistencia)."""
     row = db.execute(
         text("SELECT nemo, tipo FROM centrales WHERE id=:id LIMIT 1"),
         {"id": id_central}
     ).fetchone()
     if not row:
-        return None, False
+        return None, None, None, False
     nemo, tipo = row
 
     if tipo == 1:
         id_e = _get_enlace_directo(id_central, db)
         if not id_e:
-            return None, False
+            return None, None, None, False
         _, valores, _ = _procesar_enlace_iccp(id_e, ini, fin, db)
         if not valores:
-            return 0.0, False
-        return float(valores.get("ind_total_norm", 0.0)), False
+            return 0.0, 0.0, 0.0, False
+        cortes = float(valores.get("promedio_neto", 0.0))
+        datos = float(valores.get("ind_datos_norm", 0.0))
+        return cortes, datos, float(valores.get("ind_total_norm", 0.0)), False
 
     if tipo == 3:
         id_e = _get_enlace_backup_bcog(id_central, db)
         if not id_e:
-            return None, False
+            return None, None, None, False
         _, valores, _ = _procesar_enlace_iccp(id_e, ini, fin, db)
         if not valores:
-            return 0.0, False
-        return float(valores.get("ind_total_norm", 0.0)), False
+            return 0.0, 0.0, 0.0, False
+        cortes = float(valores.get("promedio_neto", 0.0))
+        datos = float(valores.get("ind_datos_norm", 0.0))
+        return cortes, datos, float(valores.get("ind_total_norm", 0.0)), False
 
     if tipo == 2:
         id_prim = _get_enlace_directo(id_central, db)
         id_bck = _get_enlace_backup_bcog(id_central, db)
         if not id_prim or not id_bck:
-            return None, False
+            return None, None, None, False
         return _calcular_tipo2_iccp(id_prim, id_bck, ini, fin, db)
 
-    return None, False
+    return None, None, None, False
 
 
 # ─── Detalle on-the-fly ICCP ──────────────────────────────────────────────────

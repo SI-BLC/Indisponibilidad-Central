@@ -9,14 +9,14 @@ router = APIRouter(prefix="/datasets", tags=["DataSets"])
 DEFAULT_DS = ["DS_1_0", "DS_2_0", "DS_3_0"]
 
 
-@router.get("/", response_model=list[schemas.DataSetOut])
+@router.get("", response_model=list[schemas.DataSetOut])
 def get_datasets(id_enlace: int, db: Session = Depends(get_db)):
     return db.query(models.DataSet).filter(
         models.DataSet.id_enlace == id_enlace
     ).all()
 
 
-@router.post("/", response_model=schemas.DataSetOut, status_code=201)
+@router.post("", response_model=schemas.DataSetOut, status_code=201)
 def crear_dataset(ds: schemas.DataSetCreate, db: Session = Depends(get_db)):
     existing = db.query(models.DataSet).filter(
         models.DataSet.id_enlace == ds.id_enlace,

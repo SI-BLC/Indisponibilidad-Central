@@ -6,17 +6,17 @@
 // ─── Panel de filtros ────────────────────────────────────────────────────────
 
 .filter-panel {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-card);
   padding: 20px;
   margin-bottom: 28px;
 }
 
 .panel-title {
   display: flex; align-items: center; gap: 8px;
-  font-size: 0.8rem; font-weight: 600; color: #7c839d;
+  font-size: 0.8rem; font-weight: 600; color: var(--text-4);
   text-transform: uppercase; letter-spacing: .08em;
   margin-bottom: 16px;
   mat-icon { font-size: 16px; width: 16px; height: 16px; }
@@ -25,8 +25,8 @@
 .rango-tabs {
   display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;
   button {
-    padding: 5px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,.1);
-    background: transparent; color: #7c839d; font-size: .8rem; font-weight: 600;
+    padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border-3);
+    background: transparent; color: var(--text-4); font-size: .8rem; font-weight: 600;
     cursor: pointer; transition: all .15s;
     &:hover  { border-color: #539bff; color: #539bff; }
     &.active { background: rgba(83,155,255,.15); border-color: #539bff; color: #539bff; }
@@ -53,7 +53,7 @@
 
 .empty-state {
   display: flex; flex-direction: column; align-items: center; gap: 12px;
-  padding: 60px 20px; color: #7c839d;
+  padding: 60px 20px; color: var(--text-4);
   mat-icon { font-size: 48px; width: 48px; height: 48px; opacity: .3; }
   span { font-size: .95rem; }
 }
@@ -75,7 +75,7 @@
 }
 
 .dia-fecha {
-  font-size: 1rem; font-weight: 700; color: #e3e5ef;
+  font-size: 1rem; font-weight: 700; color: var(--text-1);
   font-family: monospace; letter-spacing: .04em;
 }
 
@@ -90,7 +90,7 @@
   padding: 14px 18px; border-radius: 10px;
   background: rgba(75, 208, 139, .06);
   border: 1px solid rgba(75, 208, 139, .15);
-  color: #4bd08b; font-size: .875rem;
+  color: var(--val-green); font-size: .875rem;
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
 }
 
@@ -105,16 +105,16 @@
 // ─── Tarjeta de central ──────────────────────────────────────────────────────
 
 .central-card {
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
   cursor: pointer;
   transition: box-shadow .2s, border-color .2s, transform .15s;
 
   &:hover {
-    box-shadow: 0 8px 32px rgba(0,0,0,.5);
+    box-shadow: var(--shadow-hover);
     border-color: rgba(83,155,255,.35);
     transform: translateY(-2px);
   }
@@ -132,24 +132,24 @@
 }
 
 .ind-label {
-  font-size: .68rem; font-weight: 700; color: #7c839d;
+  font-size: .68rem; font-weight: 700; color: var(--text-4);
   text-transform: uppercase; letter-spacing: .08em;
 }
 
 .ind-valor {
   font-family: monospace; font-size: 1.3rem; font-weight: 800;
-  color: #ff6b6b;
-  &.ind-cero { color: #4bd08b; }
+  color: var(--val-red);
+  &.ind-cero { color: var(--val-green); }
 }
 
 .ind-seg {
-  font-size: .72rem; color: #7c839d; font-family: monospace;
+  font-size: .72rem; color: var(--text-4); font-family: monospace;
 }
 
 .card-head {
   display: flex; align-items: center; gap: 12px;
   padding: 14px 16px 12px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid var(--border-1);
 }
 
 .card-avatar {
@@ -164,7 +164,7 @@
 .card-sin-registros .card-avatar {
   background: rgba(248,192,118,.12);
   border-color: rgba(248,192,118,.3);
-  color: #f8c076;
+  color: var(--val-orange);
 }
 
 .card-title-block {
@@ -172,12 +172,12 @@
 }
 
 .card-nemo {
-  font-weight: 700; font-size: .9rem; color: #e3e5ef;
+  font-weight: 700; font-size: .9rem; color: var(--text-1);
   letter-spacing: .04em;
 }
 
 .card-warn-icon {
-  color: #f8c076; font-size: 20px; width: 20px; height: 20px;
+  color: var(--val-orange); font-size: 20px; width: 20px; height: 20px;
   flex-shrink: 0;
 }
 
@@ -185,7 +185,7 @@
 
 .sin-registros-msg {
   display: flex; align-items: center; gap: 8px;
-  padding: 16px; color: #f8c076;
+  padding: 16px; color: var(--val-orange);
   font-size: .85rem; font-style: italic;
 }
 
@@ -195,15 +195,15 @@
   padding: 12px 16px;
 
   & + .enlace-block {
-    border-top: 1px solid rgba(255,255,255,.05);
+    border-top: 1px solid var(--border-2);
   }
 }
 
 .enlace-tag {
   display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,.06); border-radius: 6px;
+  background: var(--border-1); border-radius: 6px;
   padding: 3px 10px; margin-bottom: 12px;
-  font-size: .78rem; font-weight: 700; color: #a0a8c3;
+  font-size: .78rem; font-weight: 700; color: var(--text-3);
   letter-spacing: .04em;
   mat-icon { font-size: 14px; width: 14px; height: 14px; }
 }
@@ -228,15 +228,15 @@
 }
 
 .m-label {
-  font-size: .68rem; font-weight: 600; color: #7c839d;
+  font-size: .68rem; font-weight: 600; color: var(--text-4);
   text-transform: uppercase; letter-spacing: .06em;
 }
 
 .m-val {
-  font-family: monospace; font-size: .82rem; color: #7c839d;
+  font-family: monospace; font-size: .82rem; color: var(--text-4);
 
-  &.val-alerta { color: #ff6b6b; font-weight: 700; }
-  &.val-mant   { color: #f8c076; font-weight: 600; }
+  &.val-alerta { color: var(--val-red); font-weight: 700; }
+  &.val-mant   { color: var(--val-orange); font-weight: 600; }
 }
 
 // ─── Lista de cortes (inicio → fin) ──────────────────────────────────────────
@@ -251,12 +251,12 @@
   background: rgba(255, 107, 107, .07);
   border: 1px solid rgba(255, 107, 107, .18);
   border-radius: 6px; padding: 3px 10px;
-  color: #e3e5ef;
-  mat-icon { font-size: 13px; width: 13px; height: 13px; color: #ff6b6b; flex-shrink: 0; }
+  color: var(--text-1);
+  mat-icon { font-size: 13px; width: 13px; height: 13px; color: var(--val-red); flex-shrink: 0; }
 }
 
-.corte-time { color: #ff9a9a; font-weight: 700; }
-.corte-arrow { color: #7c839d; }
+.corte-time { color: var(--val-red); font-weight: 700; }
+.corte-arrow { color: var(--text-4); }
 
 // ─── Resumen redundante ───────────────────────────────────────────────────────
 
@@ -270,7 +270,7 @@
 
 .resumen-title {
   display: flex; align-items: center; gap: 6px;
-  font-size: .7rem; font-weight: 700; color: #ff9a9a;
+  font-size: .7rem; font-weight: 700; color: var(--val-red);
   text-transform: uppercase; letter-spacing: .07em;
   margin-bottom: 8px;
   mat-icon { font-size: 14px; width: 14px; height: 14px; }

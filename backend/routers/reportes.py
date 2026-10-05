@@ -8,7 +8,7 @@ from services.reporte_service import calcular_reporte, generar_reporte_txt
 router = APIRouter(prefix="/reportes", tags=["Reportes"])
 
 
-@router.post("/", response_model=ReporteOut)
+@router.post("", response_model=ReporteOut)
 def generar_reporte(req: ReporteRequest, db: Session = Depends(get_db)):
     try:
         return calcular_reporte(db, req.idCentral, req.fechaInicio, req.fechaFin)

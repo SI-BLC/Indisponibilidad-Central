@@ -13,14 +13,14 @@ def _patched_mp_init(self, *args, **kwargs):
     kwargs.setdefault("max_fields", 10000)
     _orig_mp_init(self, *args, **kwargs)
 MultiPartParser.__init__ = _patched_mp_init
-from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets, cortes_manuales, instaladores
+from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets, cortes_manuales, instaladores, ris
 from routers import auth
 from config import settings
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 # Rutas que no requieren autenticación
-PUBLIC_PATHS = {"/auth/login", "/health", "/docs", "/openapi.json", "/redoc"}
+PUBLIC_PATHS = {"/auth/login", "/auth/sso", "/auth/sso-check", "/health", "/docs", "/openapi.json", "/redoc"}
 
 scheduler = AsyncIOScheduler()
 
@@ -144,6 +144,7 @@ app = FastAPI(
     description="API REST para el sistema de monitoreo de disponibilidad de centrales",
     version="1.0.0",
     lifespan=lifespan,
+    redirect_slashes=False,
 )
 
 app.add_middleware(
@@ -202,6 +203,7 @@ app.include_router(comentarios.router)
 app.include_router(datasets.router)
 app.include_router(cortes_manuales.router)
 app.include_router(instaladores.router)
+app.include_router(ris.router)
 
 
 @app.get("/health")

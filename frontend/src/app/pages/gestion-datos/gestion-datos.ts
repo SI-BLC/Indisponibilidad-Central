@@ -54,6 +54,17 @@ export class GestionDatos implements OnInit {
     return c.nemo;
   };
   enlaces = signal<Enlace[]>([]);
+  searchEnlace = new FormControl('');
+  enlaceFilter = signal('');
+  filteredEnlaces = computed(() => {
+    const term = this.enlaceFilter().toUpperCase();
+    if (!term) return this.enlaces();
+    return this.enlaces().filter(e => e.nombre.toUpperCase().includes(term));
+  });
+  displayEnlace = (e: Enlace | string | null): string => {
+    if (!e || typeof e === 'string') return '';
+    return e.nombre;
+  };
   grupos = signal<Grupo[]>([]);
   editandoId = signal<number | null>(null);
 
@@ -126,15 +137,26 @@ export class GestionDatos implements OnInit {
     this.onCentralChange(central.id);
   }
 
+  onEnlaceSelected(event: any) {
+    const enlace: Enlace = event.option.value;
+    this.form.controls.idEnlace.setValue(enlace.id);
+    this.onEnlaceChange(enlace.id);
+  }
+
   ngOnInit() {
     this.api.getCentrales().subscribe({ next: (c) => this.centrales.set(c) });
     this.searchCentral.valueChanges.subscribe(val => {
       if (typeof val === 'string') this.centralFilter.set(val);
     });
+    this.searchEnlace.valueChanges.subscribe(val => {
+      if (typeof val === 'string') this.enlaceFilter.set(val);
+    });
   }
 
   onCentralChange(id: number) {
     this.form.patchValue({ idEnlace: null });
+    this.searchEnlace.setValue('');
+    this.enlaceFilter.set('');
     this.grupos.set([]);
     this.gruposCentral.set([]);
     this.editandoId.set(null);
@@ -168,7 +190,7 @@ export class GestionDatos implements OnInit {
     this.loadingGruposCentral.set(true);
     this.gruposCentral.set([]);
     this.editandoGrupoCentralIdx.set(null);
-    this.api.checkGrupos(ip, enlace.nombre).subscribe({
+    this.api.checkGrupos(ip, enlace.nombre, central.ssl ?? 0).subscribe({
       next: (raw) => {
         console.log('[GestionDatos] raw response:', raw);
         const grupos = this.parseGruposRaw(raw, enlace.nombre);

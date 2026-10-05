@@ -10,6 +10,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { ApiService } from '../../services/api';
 import { Central } from '../../models/central';
 import { Enlace, EnlaceCreate } from '../../models/enlace';
@@ -23,10 +25,11 @@ interface EnlaceObtenido {
 
 @Component({
   selector: 'app-editar-central',
+  providers: [provideNativeDateAdapter()],
   imports: [
     CommonModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatButtonModule, MatIconModule, MatTableModule, MatSnackBarModule,
-    MatProgressSpinnerModule, MatAutocompleteModule,
+    MatProgressSpinnerModule, MatAutocompleteModule, MatDatepickerModule,
   ],
   templateUrl: './editar-central.html',
   styleUrl: './editar-central.scss',
@@ -74,11 +77,15 @@ export class EditarCentral implements OnInit {
 
   formCentral = this.fb.group({
     nemo: ['', Validators.required],
+    nemo_cammesa: [''],
+    cliente: [''],
+    pem: [null as Date | null],
     tipo: [null as number | null, Validators.required],
     protocolo: ['elcom', Validators.required],
     id_concentrador: [null as number | null],
     ip1: [''],
     ip2: [''],
+    ssl: [0],
   });
 
   formEnlace = this.fb.group({
@@ -106,7 +113,7 @@ export class EditarCentral implements OnInit {
 
   seleccionar(central: Central) {
     this.centralSeleccionada.set(central);
-    this.formCentral.patchValue({ nemo: central.nemo, tipo: central.tipo, protocolo: central.protocolo ?? 'elcom', id_concentrador: central.id_concentrador ?? null, ip1: central.ip1 ?? '', ip2: central.ip2 ?? '' });
+    this.formCentral.patchValue({ nemo: central.nemo, nemo_cammesa: central.nemo_cammesa ?? '', cliente: central.cliente ?? '', pem: central.pem ? new Date(central.pem + 'T00:00:00') : null, tipo: central.tipo, protocolo: central.protocolo ?? 'elcom', id_concentrador: central.id_concentrador ?? null, ip1: central.ip1 ?? '', ip2: central.ip2 ?? '', ssl: central.ssl ?? 0 });
     this.api.getEnlaces(central.id).subscribe({ next: (e) => this.enlaces.set(e) });
     this.confirmandoEliminar = false;
     this.enlacesObtenidos.set([]);
@@ -117,7 +124,8 @@ export class EditarCentral implements OnInit {
     const c = this.centralSeleccionada();
     if (!c || this.formCentral.invalid) return;
     const v = this.formCentral.value;
-    this.api.actualizarCentral(c.id, { nemo: v.nemo!, tipo: v.tipo!, protocolo: v.protocolo!, id_concentrador: v.id_concentrador || null, ip1: v.ip1 || null, ip2: v.ip2 || null }).subscribe({
+    const pemDate = v.pem ? (v.pem instanceof Date ? v.pem.toISOString().slice(0, 10) : v.pem) : null;
+    this.api.actualizarCentral(c.id, { nemo: v.nemo!, nemo_cammesa: v.nemo_cammesa || null, cliente: v.cliente || null, pem: pemDate as any, tipo: v.tipo!, protocolo: v.protocolo!, id_concentrador: v.id_concentrador || null, ip1: v.ip1 || null, ip2: v.ip2 || null, ssl: v.ssl ?? 0 }).subscribe({
       next: (updated) => {
         this.centralSeleccionada.set(updated);
         this.centrales.update((list) => list.map((x) => (x.id === updated.id ? updated : x)));
@@ -177,7 +185,7 @@ export class EditarCentral implements OnInit {
     if (!this.ipCentral) return;
     this.loadingEnlaces.set(true);
     this.enlacesObtenidos.set([]);
-    this.api.checkEnlaces(this.ipCentral).subscribe({
+    this.api.checkEnlaces(this.ipCentral, this.formCentral.value.ssl ?? 0).subscribe({
       next: (raw) => {
         this.enlacesObtenidos.set(this.parseEnlacesRaw(raw));
         this.loadingEnlaces.set(false);

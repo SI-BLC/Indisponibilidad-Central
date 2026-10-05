@@ -19,14 +19,14 @@
   padding: 5px 14px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: #4bd08b;
+  color: var(--val-green);
   margin-bottom: 24px;
 }
 
 .hero-dot {
   width: 6px;
   height: 6px;
-  background: #4bd08b;
+  background: var(--val-green);
   border-radius: 50%;
   animation: pulse 2s infinite;
 }
@@ -36,7 +36,7 @@
 .hero-title {
   font-size: 2.8rem;
   font-weight: 800;
-  color: #e3e5ef;
+  color: var(--text-1);
   line-height: 1.15;
   margin: 0 0 16px;
   letter-spacing: -.03em;
@@ -51,7 +51,7 @@
 
 .hero-sub {
   font-size: 1rem;
-  color: #7c839d;
+  color: var(--text-4);
   margin: 0 0 32px;
   max-width: 480px;
   margin-left: auto;
@@ -78,8 +78,8 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  background: #131720;
-  border: 1px solid rgba(255,255,255,.07);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-1);
   border-radius: 12px;
   padding: 16px 20px;
   text-decoration: none;
@@ -104,14 +104,14 @@
   flex-shrink: 0;
   mat-icon { font-size: 20px; width: 20px; height: 20px; }
   &.blue    { background: rgba(83,155,255,.12);  color: #539bff; }
-  &.green   { background: rgba(75,208,139,.12);  color: #4bd08b; }
-  &.orange  { background: rgba(248,192,118,.12); color: #f8c076; }
+  &.green   { background: rgba(75,208,139,.12);  color: var(--val-green); }
+  &.orange  { background: rgba(248,192,118,.12); color: var(--val-orange); }
   &.purple  { background: rgba(167,139,250,.12); color: #a78bfa; }
-  &.red     { background: rgba(255,107,107,.12); color: #ff6b6b; }
+  &.red     { background: rgba(255,107,107,.12); color: var(--val-red); }
   &.teal    { background: rgba(45,212,191,.12);  color: #2dd4bf; }
 }
 
 .card-body { flex: 1; }
-.card-title { font-size: 0.9rem; font-weight: 600; color: #e3e5ef; margin-bottom: 2px; }
-.card-desc  { font-size: 0.8rem; color: #7c839d; }
-.card-arrow { font-size: 14px; width: 14px; height: 14px; color: #3f4460; transition: color 0.15s; }
+.card-title { font-size: 0.9rem; font-weight: 600; color: var(--text-1); margin-bottom: 2px; }
+.card-desc  { font-size: 0.8rem; color: var(--text-4); }
+.card-arrow { font-size: 14px; width: 14px; height: 14px; color: var(--text-6); transition: color 0.15s; }

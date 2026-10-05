@@ -32,7 +32,7 @@ def _get_asoc_cols(id_enlace: int, db: Session) -> list[str]:
     return ["asoc_bb", "asoc_bc"]
 
 
-@router.post("/", response_model=CorteManualOut)
+@router.post("", response_model=CorteManualOut)
 def insertar_corte_manual(
     body: CorteManualIn,
     db: Session = Depends(get_db),
@@ -78,7 +78,7 @@ def insertar_corte_manual(
     )
 
 
-@router.get("/")
+@router.get("")
 def listar_cortes_manuales(
     id_enlace: Optional[int] = None,
     fecha: Optional[str] = None,
