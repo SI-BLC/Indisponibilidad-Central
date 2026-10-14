@@ -70,13 +70,32 @@ export class Resultados implements OnInit {
     this.form.controls.idCentral.setValue(null);
   }
 
+  private readonly STORAGE_KEY = 'resultados_filtros';
+
   ngOnInit() {
-    this.api.getCentrales().subscribe({ next: (c) => this.centrales.set(c) });
     this.searchCentral.valueChanges.subscribe(val => {
       if (typeof val === 'string') this.centralFilter.set(val);
     });
-    this.aplicarRango('mes_actual');
-    this.buscar();
+
+    const saved = this.restoreState();
+    this.api.getCentrales().subscribe({
+      next: (c) => {
+        this.centrales.set(c);
+        if (saved?.idCentral) {
+          const match = c.find(x => x.id === saved.idCentral);
+          if (match) this.searchCentral.setValue(match as any);
+        }
+      },
+    });
+
+    if (saved) {
+      this.aplicarRango(saved.rangoModo);
+      this.form.patchValue({ idCentral: saved.idCentral, fechaDesde: saved.fechaDesde, fechaHasta: saved.fechaHasta });
+      this.buscar();
+    } else {
+      this.aplicarRango('mes_actual');
+      this.buscar();
+    }
   }
 
   aplicarRango(modo: RangoModo) {
@@ -112,6 +131,7 @@ export class Resultados implements OnInit {
   }
 
   abrirDetalle(card: ResultadoCentral) {
+    this.saveState();
     this.router.navigate(['/resultados', card.id_central, card.fecha]);
   }
 
@@ -151,6 +171,23 @@ export class Resultados implements OnInit {
     const m = Math.floor((s % 3600) / 60);
     const sc = s % 60;
     return `${h}h ${m}m ${sc}s`;
+  }
+
+  private saveState() {
+    const v = this.form.value;
+    sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+      rangoModo: this.rangoModo(),
+      idCentral: v.idCentral ?? null,
+      fechaDesde: v.fechaDesde || '',
+      fechaHasta: v.fechaHasta || '',
+    }));
+  }
+
+  private restoreState(): { rangoModo: RangoModo; idCentral: number | null; fechaDesde: string; fechaHasta: string } | null {
+    const raw = sessionStorage.getItem(this.STORAGE_KEY);
+    sessionStorage.removeItem(this.STORAGE_KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
   }
 
   private toIsoDate(d: Date): string {

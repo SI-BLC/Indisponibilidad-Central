@@ -313,7 +313,10 @@ export class Ris {
       plugins: {
         legend: {
           position: 'bottom' as const,
-          labels: { color: c.legend, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle', padding: 16 },
+          labels: {
+            color: c.legend, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle', padding: 16,
+            filter: (item: any) => item.text !== 'Ind. Acumulada',
+          },
         },
         tooltip: {
           backgroundColor: c.tooltipBg, titleColor: c.tooltipTitle, bodyColor: c.tooltipBody,
@@ -341,6 +344,7 @@ export class Ris {
           title: { display: true, text: 'Segundos', color: c.tick, font: { size: 11 } },
         },
         yAcum: {
+          display: false,
           position: 'right',
           border: { color: c.axBorder },
           grid: { drawOnChartArea: false },
@@ -503,6 +507,7 @@ export class Ris {
           tension: 0.3,
           yAxisID: 'yAcum',
           stack: undefined,
+          hidden: true,
         } as any,
       ],
     });
