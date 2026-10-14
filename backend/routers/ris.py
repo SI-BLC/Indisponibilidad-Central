@@ -235,7 +235,7 @@ def get_ris(
     # --- OBSERVACIONES (comentarios del mes) ---
     comentarios_rows = db.execute(
         text("""
-            SELECT tipo, fecha_dia, fecha_inicio, fecha_fin, texto, usuario
+            SELECT tipo, fecha_dia, fecha_inicio, fecha_fin, texto, usuario, duracion_seg
             FROM comentarios
             WHERE id_central = :c AND fecha_dia BETWEEN :ini AND :fin
             ORDER BY fecha_dia, fecha_inicio
@@ -252,7 +252,10 @@ def get_ris(
         dia_data = diario_lookup.get(fecha_iso, {})
 
         if cm["tipo"] == "corte":
-            duracion = dia_data.get("ind_cortes_seg") or 0
+            if cm["duracion_seg"] is not None:
+                duracion = float(cm["duracion_seg"])
+            else:
+                duracion = dia_data.get("ind_cortes_seg") or 0
             obs_cortes.append({
                 "fecha": fecha_iso,
                 "fecha_inicio": cm["fecha_inicio"],

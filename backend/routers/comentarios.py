@@ -13,6 +13,7 @@ class ComentarioCreate(BaseModel):
     id_central: int
     fecha_dia: str
     tipo: str  # "corte" | "dat"
+    duracion_seg: Optional[float] = None
     fecha_inicio: str
     fecha_fin: str
     texto: str
@@ -22,7 +23,7 @@ class ComentarioUpdate(BaseModel):
     texto: str
 
 
-COLS = "id, id_central, fecha_dia, tipo, fecha_inicio, fecha_fin, texto, usuario, created_at, updated_at"
+COLS = "id, id_central, fecha_dia, tipo, duracion_seg, fecha_inicio, fecha_fin, texto, usuario, created_at, updated_at"
 
 
 def _row_to_dict(row) -> dict:
@@ -31,12 +32,13 @@ def _row_to_dict(row) -> dict:
         "id_central":   row[1],
         "fecha_dia":    str(row[2]),
         "tipo":         row[3],
-        "fecha_inicio": row[4],
-        "fecha_fin":    row[5],
-        "texto":        row[6],
-        "usuario":      row[7],
-        "created_at":   row[8].isoformat() if row[8] else None,
-        "updated_at":   row[9].isoformat() if row[9] else None,
+        "duracion_seg": row[4],
+        "fecha_inicio": row[5],
+        "fecha_fin":    row[6],
+        "texto":        row[7],
+        "usuario":      row[8],
+        "created_at":   row[9].isoformat() if row[9] else None,
+        "updated_at":   row[10].isoformat() if row[10] else None,
     }
 
 
@@ -72,10 +74,11 @@ def crear_comentario(
     now = datetime.now()
     db.execute(
         text("""INSERT INTO comentarios
-                (id_central, fecha_dia, tipo, fecha_inicio, fecha_fin, texto, usuario, created_at, updated_at)
-                VALUES (:c, :fd, :t, :fi, :ff, :txt, :u, :ca, :ua)"""),
+                (id_central, fecha_dia, tipo, duracion_seg, fecha_inicio, fecha_fin, texto, usuario, created_at, updated_at)
+                VALUES (:c, :fd, :t, :ds, :fi, :ff, :txt, :u, :ca, :ua)"""),
         {
             "c": body.id_central, "fd": body.fecha_dia, "t": body.tipo,
+            "ds": body.duracion_seg,
             "fi": body.fecha_inicio, "ff": body.fecha_fin,
             "txt": body.texto, "u": usuario, "ca": now, "ua": now,
         },
@@ -101,7 +104,7 @@ def actualizar_comentario(
     ).fetchone()
     if not row:
         raise HTTPException(404, "Comentario no encontrado")
-    if row[7] != usuario:
+    if row[8] != usuario:
         raise HTTPException(403, "Solo el autor puede editar este comentario")
     db.execute(
         text("UPDATE comentarios SET texto = :t, updated_at = :ua WHERE id = :id"),
@@ -126,7 +129,7 @@ def eliminar_comentario(
     ).fetchone()
     if not row:
         raise HTTPException(404, "Comentario no encontrado")
-    if row[7] != usuario:
+    if row[8] != usuario:
         raise HTTPException(403, "Solo el autor puede eliminar este comentario")
     db.execute(text("DELETE FROM comentarios WHERE id = :id"), {"id": id_comentario})
     db.commit()

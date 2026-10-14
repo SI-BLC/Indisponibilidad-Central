@@ -279,6 +279,7 @@ export class ApiService {
 
   crearComentario(body: {
     id_central: number; fecha_dia: string; tipo: string;
+    duracion_seg?: number | null;
     fecha_inicio: string; fecha_fin: string; texto: string;
   }): Observable<Comentario> {
     return this.http.post<Comentario>(`${this.base}/comentarios`, body);

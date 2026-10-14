@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -11,6 +11,14 @@ import { ApiService } from '../../services/api';
 import { AuthService } from '../../services/auth.service';
 import { DetalleCentral } from '../../models/resultado';
 import { Comentario } from '../../models/comentario';
+
+interface CorteEfectivo {
+  enlace: string;
+  inicio: string;
+  fin: string;
+  dur_seg: number;
+  bajo_tolerancia: boolean;
+}
 
 @Component({
   selector: 'app-resultado-detalle',
@@ -37,6 +45,12 @@ export class ResultadoDetalle implements OnInit {
 
   comentarios = signal<Comentario[]>([]);
 
+  cortesSinCobertura = computed(() => {
+    const d = this.detalle();
+    if (!d) return [];
+    return d.cortes_efectivos.filter(c => c.enlace === 'Sin cobertura');
+  });
+
   // Dialog state
   dialogVisible = signal(false);
   dialogTipo    = '';
@@ -44,6 +58,7 @@ export class ResultadoDetalle implements OnInit {
   dialogFin     = '';
   dialogFinEditable = false;
   dialogTexto   = '';
+  dialogCortesSeleccionados: CorteEfectivo[] = [];
   dialogSaving  = signal(false);
 
   // Edit inline
@@ -88,6 +103,9 @@ export class ResultadoDetalle implements OnInit {
     this.dialogFin = fin;
     this.dialogFinEditable = false;
     this.dialogTexto = '';
+    const sinCob = this.cortesSinCobertura();
+    const match = sinCob.find(c => c.inicio === inicio && c.fin === fin);
+    this.dialogCortesSeleccionados = match ? [match] : [];
     this.dialogVisible.set(true);
   }
 
@@ -97,6 +115,7 @@ export class ResultadoDetalle implements OnInit {
     this.dialogFin = '';
     this.dialogFinEditable = true;
     this.dialogTexto = '';
+    this.dialogCortesSeleccionados = [];
     this.dialogVisible.set(true);
   }
 
@@ -104,19 +123,45 @@ export class ResultadoDetalle implements OnInit {
     this.dialogVisible.set(false);
   }
 
+  isCorteSelected(c: CorteEfectivo): boolean {
+    return this.dialogCortesSeleccionados.some(s => s.inicio === c.inicio && s.fin === c.fin);
+  }
+
+  toggleCorte(c: CorteEfectivo) {
+    if (this.isCorteSelected(c)) {
+      this.dialogCortesSeleccionados = this.dialogCortesSeleccionados.filter(
+        s => !(s.inicio === c.inicio && s.fin === c.fin)
+      );
+    } else {
+      this.dialogCortesSeleccionados = [...this.dialogCortesSeleccionados, c];
+    }
+  }
+
   guardarDialog() {
     const texto = this.dialogTexto.trim();
     if (!texto) return;
     if (this.dialogFinEditable && !this.dialogFin) return;
     this.dialogSaving.set(true);
-    const fechaFin = this.dialogFinEditable
+    let fechaInicio = this.dialogInicio;
+    let fechaFin = this.dialogFinEditable
       ? `${this.fecha}T${this.dialogFin}:00`
       : this.dialogFin;
+
+    let duracionSeg: number | null = null;
+    if (this.dialogTipo === 'corte' && this.dialogCortesSeleccionados.length > 0) {
+      duracionSeg = this.dialogCortesSeleccionados.reduce((sum, c) => sum + c.dur_seg, 0);
+      const inicios = this.dialogCortesSeleccionados.map(c => c.inicio).sort();
+      const fines = this.dialogCortesSeleccionados.map(c => c.fin).sort();
+      fechaInicio = inicios[0];
+      fechaFin = fines[fines.length - 1];
+    }
+
     this.api.crearComentario({
       id_central: this.centralId,
       fecha_dia: this.fecha,
       tipo: this.dialogTipo,
-      fecha_inicio: this.dialogInicio,
+      duracion_seg: duracionSeg,
+      fecha_inicio: fechaInicio,
       fecha_fin: fechaFin,
       texto,
     }).subscribe({

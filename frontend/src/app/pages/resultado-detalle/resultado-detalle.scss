@@ -269,6 +269,37 @@
   outline: none;
   &:focus { border-color: #539bff; }
 }
+.dialog-corte-select {
+  margin-bottom: 14px;
+}
+.corte-check-list {
+  display: flex; flex-direction: column; gap: 4px;
+  max-height: 180px; overflow-y: auto;
+  border: 1px solid var(--border-3); border-radius: 6px;
+  padding: 6px;
+}
+.corte-check-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 4px; cursor: pointer;
+  transition: background .12s ease;
+  &:hover { background: var(--bg-hover); }
+  &.checked { background: rgba(83, 155, 255, .08); }
+  input[type="checkbox"] { accent-color: #539bff; flex-shrink: 0; }
+}
+.corte-check-label {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;
+  font-size: .8rem; color: var(--text-2);
+}
+.corte-check-enlace {
+  font-weight: 600; color: var(--text-1); white-space: nowrap;
+}
+.corte-check-time {
+  font-size: .75rem; color: var(--text-4);
+}
+.corte-check-seg {
+  margin-left: auto; font-size: .75rem; font-weight: 700; color: var(--val-red);
+  white-space: nowrap;
+}
 .dialog-footer {
   padding: 12px 20px; border-top: 1px solid var(--border-1);
   display: flex; justify-content: flex-end;

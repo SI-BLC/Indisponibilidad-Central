@@ -368,6 +368,25 @@
           </div>
         </div>
 
+        @if (dialogTipo === 'corte' && cortesSinCobertura().length > 0) {
+          <div class="dialog-field dialog-corte-select">
+            <label>Asociar a cortes sin cobertura</label>
+            <div class="corte-check-list">
+              @for (c of cortesSinCobertura(); track c.inicio) {
+                <label class="corte-check-item" [class.checked]="isCorteSelected(c)">
+                  <input type="checkbox" [checked]="isCorteSelected(c)"
+                    (change)="toggleCorte(c)" />
+                  <span class="corte-check-label">
+                    <span class="corte-check-enlace">Sin cobertura</span>
+                    <span class="corte-check-time mono">{{ horaCorta(c.inicio) }} → {{ horaCorta(c.fin) }}</span>
+                    <span class="corte-check-seg mono">{{ c.dur_seg | number:'1.0-0' }} seg</span>
+                  </span>
+                </label>
+              }
+            </div>
+          </div>
+        }
+
         <textarea class="comentario-textarea" [(ngModel)]="dialogTexto" rows="4"
           placeholder="Escribí tu análisis u observación..."></textarea>
       </div>
