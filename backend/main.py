@@ -13,7 +13,7 @@ def _patched_mp_init(self, *args, **kwargs):
     kwargs.setdefault("max_fields", 10000)
     _orig_mp_init(self, *args, **kwargs)
 MultiPartParser.__init__ = _patched_mp_init
-from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets, cortes_manuales, instaladores, ris
+from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets, cortes_manuales, instaladores, ris, nodos
 from routers import auth
 from config import settings
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -23,6 +23,44 @@ from apscheduler.triggers.cron import CronTrigger
 PUBLIC_PATHS = {"/auth/login", "/auth/sso", "/auth/sso-check", "/health", "/docs", "/openapi.json", "/redoc"}
 
 scheduler = AsyncIOScheduler()
+
+
+async def _job_check_nodos():
+    """Tarea programada: verifica estado de nodos cada 5 min."""
+    import httpx as _httpx
+    from database import SessionLocal
+    from routers.nodos import _check_single
+    from sqlalchemy import text as _t
+    from datetime import datetime as _dt
+    import asyncio as _aio
+
+    db = SessionLocal()
+    try:
+        rows = db.execute(_t("SELECT DISTINCT ip1, `ssl` FROM centrales WHERE ip1 IS NOT NULL")).fetchall()
+        nodes = [(r[0], r[1]) for r in rows]
+        now = _dt.now()
+        async with _httpx.AsyncClient(timeout=10, verify=False) as client:
+            results = await _aio.gather(*[_check_single(ip, ssl, client) for ip, ssl in nodes])
+        for r in results:
+            was = db.execute(_t("SELECT online FROM nodos_estado WHERE ip = :ip"), {"ip": r["ip"]}).scalar()
+            if was is None:
+                db.execute(_t("""
+                    INSERT INTO nodos_estado (ip, online, ultimo_check, ultimo_online, ultimo_caida, error_msg)
+                    VALUES (:ip, :on, :now, :uon, :uca, :err)
+                """), {"ip": r["ip"], "on": int(r["online"]), "now": now,
+                       "uon": now if r["online"] else None,
+                       "uca": now if not r["online"] else None, "err": r["error"]})
+            else:
+                sets = ["online = :on", "ultimo_check = :now", "error_msg = :err"]
+                params = {"ip": r["ip"], "on": int(r["online"]), "now": now, "err": r["error"]}
+                if r["online"]:
+                    sets.append("ultimo_online = :now")
+                elif was:
+                    sets.append("ultimo_caida = :now")
+                db.execute(_t(f"UPDATE nodos_estado SET {', '.join(sets)} WHERE ip = :ip"), params)
+        db.commit()
+    finally:
+        db.close()
 
 
 async def _job_guardar_resultados():
@@ -134,6 +172,12 @@ async def lifespan(app: FastAPI):
         id="reporte_diario",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _job_check_nodos,
+        CronTrigger(minute="*/5"),
+        id="check_nodos",
+        replace_existing=True,
+    )
     scheduler.start()
     yield
     scheduler.shutdown()
@@ -204,6 +248,7 @@ app.include_router(datasets.router)
 app.include_router(cortes_manuales.router)
 app.include_router(instaladores.router)
 app.include_router(ris.router)
+app.include_router(nodos.router)
 
 
 @app.get("/health")

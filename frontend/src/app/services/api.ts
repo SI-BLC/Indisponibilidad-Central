@@ -9,6 +9,17 @@ import { ConItem, DatItem, ConIccpItem, DatIccpItem } from '../models/datos';
 import { CargaManualResult } from '../models/carga-manual';
 import { Comentario } from '../models/comentario';
 
+export interface NodoEstado {
+  ip: string;
+  ssl: number;
+  online: boolean | null;
+  ultimo_check: string | null;
+  ultimo_online: string | null;
+  ultimo_caida: string | null;
+  error_msg: string | null;
+  centrales: { nemo: string; tipo: number; protocolo: string }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
@@ -38,6 +49,15 @@ export class ApiService {
   // Dashboard
   getDashboard(): Observable<DashboardCentral[]> {
     return this.http.get<DashboardCentral[]>(`${this.base}/dashboard`);
+  }
+
+  // Nodos
+  getNodos(): Observable<NodoEstado[]> {
+    return this.http.get<NodoEstado[]>(`${this.base}/nodos`);
+  }
+
+  checkNodos(): Observable<{ checked: number; online: number; offline: number }> {
+    return this.http.post<{ checked: number; online: number; offline: number }>(`${this.base}/nodos/check`, {});
   }
 
   // Enlaces

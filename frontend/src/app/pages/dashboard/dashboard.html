@@ -1,51 +1,35 @@
 <div class="page-container">
   <div class="page-header">
     <div>
-      <h1 class="page-title">Dashboard</h1>
-      <p class="text-muted" style="margin:0;font-size:.875rem">Estado general de las centrales de telecomunicaciones</p>
+      <h1 class="page-title">Estado de Nodos</h1>
+      <p class="text-muted" style="margin:0;font-size:.875rem">Monitoreo en tiempo real de los nodos de adquisición</p>
     </div>
     <div class="header-actions">
-      <button mat-stroked-button (click)="guardarResultados()" [disabled]="guardandoResultados()"
-              matTooltip="Calcula y guarda los resultados del mes en curso (sobreescribe datos existentes)."
-              class="save-btn">
-        @if (guardandoResultados()) {
+      <button mat-stroked-button (click)="ejecutarCheck()" [disabled]="checking()" class="check-btn"
+              matTooltip="Ejecutar health-check de todos los nodos ahora">
+        @if (checking()) {
           <mat-spinner diameter="16" />
         } @else {
-          <mat-icon>save</mat-icon>
+          <mat-icon>refresh</mat-icon>
         }
-        Guardar Resultados
+        Verificar ahora
       </button>
-      <a mat-flat-button color="primary" routerLink="/agregar-central">
-        <mat-icon>add</mat-icon> Nueva Central
-      </a>
     </div>
   </div>
-
-  @if (ultimoGuardado()) {
-    <div class="guardado-banner" [class.has-errors]="ultimoGuardado()!.fallidos_total > 0">
-      <mat-icon>{{ ultimoGuardado()!.fallidos_total === 0 ? 'check_circle' : 'warning' }}</mat-icon>
-      <span>
-        Resultados guardados para <strong>{{ ultimoGuardado()!.periodo }}</strong> —
-        {{ ultimoGuardado()!.dias_procesados }} día(s) procesados,
-        {{ ultimoGuardado()!.exitosos_total }} exitosos
-        @if (ultimoGuardado()!.fallidos_total > 0) { , {{ ultimoGuardado()!.fallidos_total }} fallidos }
-      </span>
-      <a routerLink="/resultados" class="ver-link">Ver resultados <mat-icon>arrow_forward</mat-icon></a>
-    </div>
-  }
 
   @if (loading()) {
     <div class="loading-center"><mat-spinner diameter="44" /></div>
   } @else if (error()) {
     <p class="error-msg">{{ error() }}</p>
   } @else {
+    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-card-inner">
-          <div class="icon-box primary"><mat-icon>bolt</mat-icon></div>
+          <div class="icon-box neutral"><mat-icon>dns</mat-icon></div>
           <div>
-            <div class="stat-number">{{ centrales().length }}</div>
-            <div class="stat-label text-muted">Total Centrales</div>
+            <div class="stat-number">{{ totalNodos() }}</div>
+            <div class="stat-label text-muted">Total Nodos</div>
           </div>
         </div>
       </div>
@@ -53,73 +37,139 @@
         <div class="stat-card-inner">
           <div class="icon-box success"><mat-icon>check_circle</mat-icon></div>
           <div>
-            <div class="stat-number text-success">{{ configuradas() }}</div>
-            <div class="stat-label text-muted">Configuradas</div>
+            <div class="stat-number text-success">{{ onlineCount() }}</div>
+            <div class="stat-label text-muted">Online</div>
           </div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-card-inner">
-          <div class="icon-box warning"><mat-icon>warning</mat-icon></div>
+          <div class="icon-box danger"><mat-icon>error</mat-icon></div>
           <div>
-            <div class="stat-number text-warning">{{ sinGrupos() }}</div>
-            <div class="stat-label text-muted">Sin grupos</div>
+            <div class="stat-number text-danger">{{ offlineCount() }}</div>
+            <div class="stat-label text-muted">Offline</div>
           </div>
         </div>
       </div>
       <div class="stat-card">
         <div class="stat-card-inner">
-          <div class="icon-box primary"><mat-icon>link</mat-icon></div>
+          <div class="icon-box warning"><mat-icon>help_outline</mat-icon></div>
           <div>
-            <div class="stat-number">{{ totalEnlaces() }}</div>
-            <div class="stat-label text-muted">Total Enlaces</div>
+            <div class="stat-number text-warning">{{ unknownCount() }}</div>
+            <div class="stat-label text-muted">Sin verificar</div>
           </div>
         </div>
       </div>
     </div>
 
-    <h2 class="section-title" style="margin-top:8px">Centrales</h2>
-    @if (centrales().length === 0) {
-      <div class="empty-state">
-        <mat-icon>cell_tower</mat-icon>
-        <p>No hay centrales configuradas. <a routerLink="/agregar-central">Agregar una</a>.</p>
+    @if (lastCheckTime()) {
+      <div class="last-check">
+        <mat-icon>schedule</mat-icon>
+        Último check: {{ horaCorta(lastCheckTime()!.toISOString()) }}
+        ({{ tiempoDesde(lastCheckTime()!.toISOString()) }})
       </div>
-    } @else {
-      <div class="cards-grid">
-        @for (c of centrales(); track c.id) {
-          <div class="central-card">
-            <div class="central-card-top">
-              <div class="central-avatar">{{ c.nemo.slice(0,2) }}</div>
-              <div class="central-info">
-                <div class="central-nemo">{{ c.nemo }}</div>
-                <span class="badge" [ngClass]="tipoBadge[c.tipo]">{{ tipoLabels[c.tipo] }}</span>
-              </div>
-              <span class="status-dot" [class.ok]="c.tiene_grupos" [class.warn]="!c.tiene_grupos"></span>
-            </div>
+    }
 
-            <div class="central-stats">
-              <div class="mini-stat">
-                <mat-icon>link</mat-icon>
-                <span>{{ c.cant_enlaces }} enlace(s)</span>
+    <!-- Offline nodes (priority section) -->
+    @if (nodosOffline().length > 0) {
+      <div class="section offline-section">
+        <h2 class="section-title danger-title">
+          <mat-icon>error</mat-icon> Nodos Offline ({{ nodosOffline().length }})
+        </h2>
+        <div class="nodos-grid">
+          @for (n of nodosOffline(); track n.ip) {
+            <div class="nodo-card offline">
+              <div class="nodo-header">
+                <div class="nodo-status-icon offline">
+                  <mat-icon>power_off</mat-icon>
+                </div>
+                <div class="nodo-info">
+                  <div class="nodo-centrales">
+                    @for (c of n.centrales; track c.nemo) {
+                      <span class="nodo-nemo">{{ c.nemo }}</span>
+                    }
+                  </div>
+                  <span class="nodo-ip mono">{{ n.ip }}</span>
+                </div>
+                <div class="nodo-downtime">
+                  <span class="downtime-value">{{ tiempoDesde(n.ultimo_caida) }}</span>
+                  <span class="downtime-label">caído</span>
+                </div>
               </div>
-              <div class="mini-stat">
-                <mat-icon [style.color]="c.tiene_grupos ? '#4bd08b' : '#f8c076'">
-                  {{ c.tiene_grupos ? 'layers' : 'layers_clear' }}
-                </mat-icon>
-                <span>{{ c.tiene_grupos ? 'Grupos OK' : 'Sin grupos' }}</span>
+              @if (n.error_msg) {
+                <div class="nodo-error mono">{{ n.error_msg }}</div>
+              }
+              <div class="nodo-meta">
+                @if (n.ultimo_caida) {
+                  <span><mat-icon>event</mat-icon> Caída: {{ horaCorta(n.ultimo_caida) }}</span>
+                }
+                @if (n.ultimo_online) {
+                  <span><mat-icon>history</mat-icon> Último online: {{ horaCorta(n.ultimo_online) }}</span>
+                }
               </div>
             </div>
+          }
+        </div>
+      </div>
+    }
 
-            <div class="central-actions">
-              <a mat-stroked-button [routerLink]="['/reportes']" [queryParams]="{ central: c.id }">
-                <mat-icon>bar_chart</mat-icon> Reporte
-              </a>
-              <a mat-stroked-button [routerLink]="['/editar-central']" [queryParams]="{ id: c.id }">
-                <mat-icon>edit</mat-icon> Editar
-              </a>
+    <!-- Unknown nodes -->
+    @if (nodosDesconocidos().length > 0) {
+      <div class="section">
+        <h2 class="section-title warn-title">
+          <mat-icon>help_outline</mat-icon> Sin verificar ({{ nodosDesconocidos().length }})
+        </h2>
+        <p class="section-hint">Estos nodos no fueron chequeados aún. Ejecutá "Verificar ahora" para obtener su estado.</p>
+        <div class="nodos-grid compact">
+          @for (n of nodosDesconocidos(); track n.ip) {
+            <div class="nodo-card unknown">
+              <div class="nodo-header">
+                <div class="nodo-status-icon unknown">
+                  <mat-icon>help_outline</mat-icon>
+                </div>
+                <div class="nodo-info">
+                  <div class="nodo-centrales">
+                    @for (c of n.centrales; track c.nemo) {
+                      <span class="nodo-nemo">{{ c.nemo }}</span>
+                    }
+                  </div>
+                  <span class="nodo-ip mono">{{ n.ip }}</span>
+                </div>
+              </div>
             </div>
-          </div>
-        }
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Online nodes -->
+    @if (nodosOnline().length > 0) {
+      <div class="section">
+        <h2 class="section-title ok-title">
+          <mat-icon>check_circle</mat-icon> Online ({{ nodosOnline().length }})
+        </h2>
+        <div class="nodos-grid compact">
+          @for (n of nodosOnline(); track n.ip) {
+            <div class="nodo-card online">
+              <div class="nodo-header">
+                <div class="nodo-status-icon online">
+                  <mat-icon>check_circle</mat-icon>
+                </div>
+                <div class="nodo-info">
+                  <div class="nodo-centrales">
+                    @for (c of n.centrales; track c.nemo) {
+                      <span class="nodo-nemo">{{ c.nemo }}</span>
+                    }
+                  </div>
+                  <span class="nodo-ip mono">{{ n.ip }}</span>
+                </div>
+                <span class="nodo-uptime" matTooltip="Último check: {{ horaCorta(n.ultimo_check) }}">
+                  {{ tiempoDesde(n.ultimo_check) }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
       </div>
     }
   }
