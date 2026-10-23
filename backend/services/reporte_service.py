@@ -301,7 +301,14 @@ def _procesar_corte_asoc_pd(asoc: str, ini: datetime, fin: datetime,
             data.append((asoc_up, EV_ESTAB, fin_dia, id_enlace, 0))
     else:
         fin_dia = fin - timedelta(seconds=1)
-        if hay and fecha_max:
+        con_col = f"asoc_{asoc}"
+        enlace_up = _estado_inicial_enlace(id_enlace, con_col, ini, db)
+
+        if not enlace_up:
+            # Enlace cortado desde un día anterior → corte todo el día
+            data.append((asoc_up, EV_CAIDA, ini, id_enlace, 0))
+            data.append((asoc_up, EV_ESTAB, fin_dia, id_enlace, 0))
+        elif hay and fecha_max:
             if isinstance(fecha_max, str):
                 fecha_max = datetime.fromisoformat(fecha_max)
             if fecha_max >= fin:
@@ -712,8 +719,15 @@ def _armar_informe_pd(id_enlace: int, ini: datetime, fin: datetime,
     isb_norm = _ind_cortes_pd(ab, 0, id_enlace, df_cortes)
     isb_mant = _ind_cortes_pd(ab, 1, id_enlace, df_cortes)
 
-    is_cortes_norm = (isc_norm * vi_ct + isb_norm * vi_bt) / vi_total_t if vi_total_t else 0.0
-    is_cortes_mant = (isc_mant * vi_ct + isb_mant * vi_bt) / vi_total_t if vi_total_t else 0.0
+    if vi_total_t:
+        is_cortes_norm = (isc_norm * vi_ct + isb_norm * vi_bt) / vi_total_t
+        is_cortes_mant = (isc_mant * vi_ct + isb_mant * vi_bt) / vi_total_t
+    elif not df_cortes.empty:
+        is_cortes_norm = (isc_norm + isb_norm) / 2.0
+        is_cortes_mant = (isc_mant + isb_mant) / 2.0
+    else:
+        is_cortes_norm = 0.0
+        is_cortes_mant = 0.0
 
     bruta_c = int(_ind_bruta_pd(ac, id_enlace, df_cortes))
     bruta_b = int(_ind_bruta_pd(ab, id_enlace, df_cortes))

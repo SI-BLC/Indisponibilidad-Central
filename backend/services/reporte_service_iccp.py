@@ -441,8 +441,15 @@ def _armar_informe_iccp(id_enlace: int, ini: datetime, fin: datetime,
     iss_norm = _ind_cortes_pd(ab, 0, id_enlace, df_cortes)
     iss_mant = _ind_cortes_pd(ab, 1, id_enlace, df_cortes)
 
-    is_cortes_norm = (isc_norm * vi_ct + iss_norm * vi_st) / vi_total_t if vi_total_t else 0.0
-    is_cortes_mant = (isc_mant * vi_ct + iss_mant * vi_st) / vi_total_t if vi_total_t else 0.0
+    if vi_total_t:
+        is_cortes_norm = (isc_norm * vi_ct + iss_norm * vi_st) / vi_total_t
+        is_cortes_mant = (isc_mant * vi_ct + iss_mant * vi_st) / vi_total_t
+    elif not df_cortes.empty:
+        is_cortes_norm = (isc_norm + iss_norm) / 2.0
+        is_cortes_mant = (isc_mant + iss_mant) / 2.0
+    else:
+        is_cortes_norm = 0.0
+        is_cortes_mant = 0.0
 
     bruta_c = int(_ind_bruta_pd(ac, id_enlace, df_cortes))
     bruta_s = int(_ind_bruta_pd(ab, id_enlace, df_cortes))
