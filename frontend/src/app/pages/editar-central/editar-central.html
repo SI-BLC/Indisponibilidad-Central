@@ -217,7 +217,7 @@
             </ng-container>
             <ng-container matColumnDef="idtipo">
               <th mat-header-cell *matHeaderCellDef>SOTR</th>
-              <td mat-cell *matCellDef="let e"><span class="mono-id">{{ e.idtipo ?? "—" }}</span></td>
+              <td mat-cell *matCellDef="let e"><span class="mono-id">{{ e.idtipo === 2 ? 'Directo' : e.idtipo === 3 ? 'Concentrador' : '—' }}</span></td>
             </ng-container>
             <ng-container matColumnDef="rol">
               <th mat-header-cell *matHeaderCellDef>ROL</th>
@@ -252,9 +252,13 @@
                 <mat-label>Nombre enlace</mat-label>
                 <input matInput formControlName="nombre" />
               </mat-form-field>
-              <mat-form-field appearance="outline" style="width:140px">
+              <mat-form-field appearance="outline" style="width:160px">
                 <mat-label>Tipo Enlace</mat-label>
-                <input matInput formControlName="idtipo" />
+                <mat-select formControlName="idtipo">
+                  <mat-option [value]="null">—</mat-option>
+                  <mat-option [value]="2">Directo</mat-option>
+                  <mat-option [value]="3">Concentrador</mat-option>
+                </mat-select>
               </mat-form-field>
               <button mat-flat-button color="primary" type="submit" [disabled]="formEnlace.invalid">
                 <mat-icon>add</mat-icon> Agregar
