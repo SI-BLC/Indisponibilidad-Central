@@ -40,6 +40,7 @@ export class Sidebar {
     { label: 'Carga Manual', icon: 'upload', route: '/carga-manual' },
     { label: 'Instaladores', icon: 'security', route: '/instaladores' },
     { label: 'RIS', icon: 'description', route: '/ris' },
+    { label: 'COGB55', icon: 'hub', route: '/cogb55' },
   ];
 
   expandedGroup: string | null = null;

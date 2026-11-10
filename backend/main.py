@@ -13,7 +13,7 @@ def _patched_mp_init(self, *args, **kwargs):
     kwargs.setdefault("max_fields", 10000)
     _orig_mp_init(self, *args, **kwargs)
 MultiPartParser.__init__ = _patched_mp_init
-from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets, cortes_manuales, instaladores, ris, nodos
+from routers import centrales, enlaces, grupos, mantenimientos, reportes, dashboard, resultados, datos, carga_manual, comentarios, datasets, cortes_manuales, instaladores, ris, nodos, cogb55
 from routers import auth
 from config import settings
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -249,6 +249,7 @@ app.include_router(cortes_manuales.router)
 app.include_router(instaladores.router)
 app.include_router(ris.router)
 app.include_router(nodos.router)
+app.include_router(cogb55.router)
 
 
 @app.get("/health")

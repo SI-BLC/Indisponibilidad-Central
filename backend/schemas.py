@@ -306,3 +306,21 @@ class DashboardCentral(BaseModel):
     tipo: Optional[int]
     cant_enlaces: int
     tiene_grupos: bool
+
+
+# --- COGB55 ---
+class Cogb55GrupoOut(BaseModel):
+    id: int
+    id_central: int
+    grupo: int
+    model_config = {"from_attributes": True}
+
+
+class Cogb55CentralGrupos(BaseModel):
+    id_central: int
+    nemo: str
+    grupos: list[int]
+
+
+class Cogb55SetGrupos(BaseModel):
+    grupos: list[int]

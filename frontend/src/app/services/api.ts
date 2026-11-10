@@ -411,4 +411,27 @@ export class ApiService {
   eliminarPlantaInstalador(planta: string): Observable<any> {
     return this.http.delete(`${this.base}/instaladores/eliminar/${planta}`);
   }
+
+  // --- COGB55 ---
+  getCogb55(): Observable<Cogb55CentralGrupos[]> {
+    return this.http.get<Cogb55CentralGrupos[]>(`${this.base}/cogb55`);
+  }
+  getCogb55GruposDisponibles(): Observable<number[]> {
+    return this.http.get<number[]>(`${this.base}/cogb55/grupos-disponibles`);
+  }
+  getCogb55CentralesDisponibles(): Observable<{id: number; nemo: string}[]> {
+    return this.http.get<{id: number; nemo: string}[]>(`${this.base}/cogb55/centrales-disponibles`);
+  }
+  setCogb55Grupos(idCentral: number, grupos: number[]): Observable<Cogb55CentralGrupos> {
+    return this.http.put<Cogb55CentralGrupos>(`${this.base}/cogb55/${idCentral}`, { grupos });
+  }
+  deleteCogb55(idCentral: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/cogb55/${idCentral}`);
+  }
+}
+
+export interface Cogb55CentralGrupos {
+  id_central: number;
+  nemo: string;
+  grupos: number[];
 }

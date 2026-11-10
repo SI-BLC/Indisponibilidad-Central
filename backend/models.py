@@ -175,3 +175,10 @@ class ResultadoReporte(Base):
     ind_total_norm = Column(Float, nullable=True)
     ind_total_mant = Column(Float, nullable=True)
     generado_en = Column(DateTime, nullable=True)
+
+
+class Cogb55Grupo(Base):
+    __tablename__ = "cogb55_grupos"
+    id = Column(Integer, primary_key=True, index=True)
+    id_central = Column(Integer, nullable=False, index=True)
+    grupo = Column(Integer, nullable=False)

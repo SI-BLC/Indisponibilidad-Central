@@ -1028,6 +1028,10 @@ def generar_reporte_txt(db: Session, id_central: int,
 
     _, nemo, tipo = central
 
+    from services.reporte_service_cogb55 import es_central_cogb55, generar_reporte_txt_cogb55
+    if es_central_cogb55(id_central, db):
+        return generar_reporte_txt_cogb55(id_central, fecha_ini, fecha_fin, db)
+
     # Enlace directo propio: buscar por rol='directo'; fallback a nombre *_CAMM
     enlace_directo = db.execute(
         text("SELECT id FROM enlaces WHERE rol='directo' AND idcentral=:c LIMIT 1"),
@@ -1709,6 +1713,10 @@ def _detalle_central(
         from services.reporte_service_iccp import detalle_central_iccp
         return detalle_central_iccp(id_central, ini, fin, db)
 
+    from services.reporte_service_cogb55 import es_central_cogb55, detalle_central_cogb55
+    if es_central_cogb55(id_central, db):
+        return detalle_central_cogb55(id_central, ini, fin, db)
+
     tol_c = int(db.execute(text("SELECT tol_cortes FROM configuracion LIMIT 1")).scalar() or 120)
 
     def _eventos_enlace(id_e: int) -> list[dict]:
@@ -1966,6 +1974,10 @@ def _evaluar_dat_estado(id_central: int, ini: datetime, fin: datetime,
                          db: Session) -> str | None:
     """Evalúa si la central tiene datos .dat completos (48 períodos).
     Returns None si completo, 'incompleto' si faltan períodos."""
+    from services.reporte_service_cogb55 import es_central_cogb55, evaluar_dat_estado_cogb55
+    if es_central_cogb55(id_central, db):
+        return evaluar_dat_estado_cogb55(id_central, ini, fin, db)
+
     row = db.execute(
         text("SELECT tipo, protocolo FROM centrales WHERE id=:id"),
         {"id": id_central}
@@ -2092,14 +2104,18 @@ def guardar_resultados_dia(fecha_reporte, db: Session, id_centrales: list[int] |
 
     for (id_central, nemo) in centrales:
         try:
-            protocolo = db.execute(
-                text("SELECT protocolo FROM centrales WHERE id=:id"), {"id": id_central}
-            ).scalar() or "elcom"
-            if protocolo == "iccp":
-                from services.reporte_service_iccp import calcular_ind_central_iccp
-                ind_cortes, ind_datos, ind_seg, inconsistencia = calcular_ind_central_iccp(id_central, ini, fin, db)
+            from services.reporte_service_cogb55 import es_central_cogb55, calcular_ind_cogb55
+            if es_central_cogb55(id_central, db):
+                ind_cortes, ind_datos, ind_seg, inconsistencia = calcular_ind_cogb55(id_central, ini, fin, db)
             else:
-                ind_cortes, ind_datos, ind_seg, inconsistencia = _calcular_ind_central(id_central, ini, fin, db, _enlace_cache)
+                protocolo = db.execute(
+                    text("SELECT protocolo FROM centrales WHERE id=:id"), {"id": id_central}
+                ).scalar() or "elcom"
+                if protocolo == "iccp":
+                    from services.reporte_service_iccp import calcular_ind_central_iccp
+                    ind_cortes, ind_datos, ind_seg, inconsistencia = calcular_ind_central_iccp(id_central, ini, fin, db)
+                else:
+                    ind_cortes, ind_datos, ind_seg, inconsistencia = _calcular_ind_central(id_central, ini, fin, db, _enlace_cache)
 
             dat_estado = _evaluar_dat_estado(id_central, ini, fin, db)
 

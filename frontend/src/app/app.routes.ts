@@ -104,5 +104,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/ris/ris').then((m) => m.Ris),
   },
+  {
+    path: 'cogb55',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/cogb55/cogb55').then((m) => m.Cogb55),
+  },
   { path: '**', redirectTo: 'dashboard' },
 ];
