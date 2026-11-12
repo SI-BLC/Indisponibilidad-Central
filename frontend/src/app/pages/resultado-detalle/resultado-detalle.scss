@@ -71,6 +71,20 @@
   mat-icon { font-size: 16px; width: 16px; height: 16px; }
 }
 
+.panel-entrada {
+  border-left: 3px solid #f8c076;
+  background: var(--bg-surface);
+}
+
+.panel-title-entrada {
+  color: #f8c076 !important;
+}
+
+.panel-hint-entrada {
+  font-size: .78rem; color: var(--text-4); margin: -12px 0 14px 0;
+  font-style: italic;
+}
+
 // ─── Timeline ────────────────────────────────────────────────────────────────
 
 .timeline-axis {

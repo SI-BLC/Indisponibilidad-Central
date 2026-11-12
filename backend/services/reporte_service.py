@@ -1565,6 +1565,70 @@ def _get_enlace_backup_bcog(id_central: int, db: Session) -> int | None:
     ).scalar()
 
 
+def _get_enlace_entrada_conc(id_central: int, db: Session) -> int | None:
+    """Enlace de entrada al concentrador: busca <*>_<central_nemo> bajo el concentrador."""
+    row = db.execute(
+        text("""SELECT c.nemo, c.id_concentrador
+                FROM centrales c WHERE c.id=:id LIMIT 1"""),
+        {"id": id_central}
+    ).fetchone()
+    if not row or not row[1]:
+        return None
+    nemo, conc_id = row
+    return db.execute(
+        text("""SELECT id FROM enlaces
+                WHERE idcentral=:conc AND UPPER(nombre) LIKE UPPER(CONCAT('%\\_',:n))
+                AND nombre NOT LIKE '%\\_CAMM' LIMIT 1"""),
+        {"conc": conc_id, "n": nemo}
+    ).scalar()
+
+
+def _cortes_enlace_entrada(id_central: int, ini: datetime, fin: datetime,
+                            db: Session) -> list[dict] | None:
+    """Detecta cortes en el enlace de entrada al concentrador (informativo, no afecta cálculo)."""
+    id_e = _get_enlace_entrada_conc(id_central, db)
+    if not id_e:
+        return None
+
+    tol = int(db.execute(text("SELECT tol_cortes FROM configuracion LIMIT 1")).scalar() or 120)
+    df_dat = _procesar_datos_dat_pd(ini, fin, id_e, db)
+
+    asocs = ["ab", "ac"] if _es_directo(id_e, db) else ["bb", "bc"]
+    all_cortes: list[dict] = []
+    for asoc in asocs:
+        all_cortes.extend(_procesar_corte_asoc_pd(asoc, ini, fin, id_e, tol, df_dat, db))
+
+    # Filtrar cortes de duración 0 y mergear intervalos solapados de ambas asociaciones
+    intervals = sorted(
+        [(c["inicio"], c["fin"]) for c in all_cortes if c["fin"] > c["inicio"]],
+        key=lambda x: x[0],
+    )
+    merged: list[tuple] = []
+    for start, end in intervals:
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+
+    if not merged:
+        return []
+
+    nombre = db.execute(
+        text("SELECT nombre FROM enlaces WHERE id=:id"), {"id": id_e}
+    ).scalar() or str(id_e)
+
+    return [
+        {
+            "enlace": nombre,
+            "inicio": s.isoformat(),
+            "fin": e.isoformat(),
+            "dur_seg": (e - s).total_seconds(),
+            "bajo_tolerancia": (e - s).total_seconds() < tol,
+        }
+        for s, e in merged
+    ]
+
+
 def _calcular_tipo2(
     id_prim: int, id_bck: int, ini: datetime, fin: datetime, db: Session,
     _enlace_cache: dict[int, tuple] | None = None
@@ -1740,7 +1804,7 @@ def _detalle_central(
             key = pd.Timestamp(row["fecha"]).isoformat()
             result.setdefault(key, {
                 "esperados": 0.0, "recibidos": 0.0, "buenos": 0.0,
-                "norecibidos": 0.0, "invalidos": 0.0,
+                "norecibidos": 0.0, "invalidos": 0.0, "manuales": 0.0,
                 "ui_norec": 0.0, "ui_noval": 0.0,
             })
             result[key]["esperados"]   += float(row.get("esperados",   0) or 0)
@@ -1748,6 +1812,7 @@ def _detalle_central(
             result[key]["buenos"]      += float(row.get("buenos",      0) or 0)
             result[key]["norecibidos"] += float(row.get("norecibidos", 0) or 0)
             result[key]["invalidos"]   += float(row.get("invalidos",   0) or 0)
+            result[key]["manuales"]    += float(row.get("manuales",    0) or 0)
             result[key]["ui_norec"]    += float(row.get("ui_norecibidas", 0) or 0)
             result[key]["ui_noval"]    += float(row.get("ui_invalidas",   0) or 0)
         return result
@@ -1827,7 +1892,7 @@ def _detalle_central(
             for inc in huerfanos
         ]
 
-        return {
+        result = {
             "central": nemo, "tipo": tipo,
             "ind_total_seg": float(valores.get("ind_total_norm", 0.0)) if valores else 0.0,
             "inconsistencias": huerfanos_out,
@@ -1835,6 +1900,10 @@ def _detalle_central(
             "cortes_efectivos": cortes,
             "periodos_dat": periodos_lista,
         }
+        ce = _cortes_enlace_entrada(id_central, ini, fin, db)
+        if ce is not None:
+            result["cortes_entrada"] = ce
+        return result
 
     # ─── Tipo 2 ────────────────────────────────────────────────────────────
     id_prim = _get_enlace_directo(id_central, db)
@@ -1935,7 +2004,7 @@ def _detalle_central(
 
         combined = {}
         for campo in ("esperados", "recibidos", "buenos", "norecibidos", "invalidos",
-                      "ui_norec", "ui_noval"):
+                      "manuales", "ui_norec", "ui_noval"):
             combined[campo] = prim_w.get(campo, 0.0) + bck_w.get(campo, 0.0)
 
         # Cualquier gap (ambos enlaces caídos) excluye el período, como hace el VB6.
@@ -1954,7 +2023,7 @@ def _detalle_central(
             **combined,
         })
 
-    return {
+    result = {
         "central": nemo, "tipo": tipo,
         "ind_total_seg": ind_total_seg,
         "corte_efectivo_seg": corte_ef_seg_neto,
@@ -1966,6 +2035,10 @@ def _detalle_central(
         "eventos_bck":  _eventos_enlace(id_bck),
         "periodos_dat": periodos_lista,
     }
+    ce = _cortes_enlace_entrada(id_central, ini, fin, db)
+    if ce is not None:
+        result["cortes_entrada"] = ce
+    return result
 
 
 # ─── Evaluación de completitud .dat ──────────────────────────────────────────

@@ -404,7 +404,7 @@ def detalle_central_cogb55(
             key = pd.Timestamp(r["fecha"]).isoformat()
             periodos_dat.setdefault(key, {
                 "esperados": 0.0, "recibidos": 0.0, "buenos": 0.0,
-                "norecibidos": 0.0, "invalidos": 0.0,
+                "norecibidos": 0.0, "invalidos": 0.0, "manuales": 0.0,
                 "ui_norec": 0.0, "ui_noval": 0.0,
             })
             periodos_dat[key]["esperados"]   += float(r.get("esperados",   0) or 0)
@@ -412,6 +412,7 @@ def detalle_central_cogb55(
             periodos_dat[key]["buenos"]      += float(r.get("buenos",      0) or 0)
             periodos_dat[key]["norecibidos"] += float(r.get("norecibidos", 0) or 0)
             periodos_dat[key]["invalidos"]   += float(r.get("invalidos",   0) or 0)
+            periodos_dat[key]["manuales"]    += float(r.get("manuales",    0) or 0)
             periodos_dat[key]["ui_norec"]    += float(r.get("ui_norecibidas", 0) or 0)
             periodos_dat[key]["ui_noval"]    += float(r.get("ui_invalidas",   0) or 0)
 
@@ -426,7 +427,10 @@ def detalle_central_cogb55(
         for inc in huerfanos
     ]
 
-    return {
+    from services.reporte_service import _cortes_enlace_entrada
+    ce = _cortes_enlace_entrada(id_central, ini, fin, db)
+
+    result = {
         "central": nemo, "tipo": tipo,
         "ind_total_seg": float(ind_total or 0.0),
         "inconsistencias": huerfanos_out,
@@ -435,3 +439,6 @@ def detalle_central_cogb55(
         "periodos_dat": periodos_lista,
         "cogb55_grupos": grupos,
     }
+    if ce is not None:
+        result["cortes_entrada"] = ce
+    return result

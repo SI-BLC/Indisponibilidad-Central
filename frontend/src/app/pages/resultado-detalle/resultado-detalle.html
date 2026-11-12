@@ -202,6 +202,42 @@
       </div>
     }
 
+    <!-- Cortes enlace de entrada al concentrador (informativo) -->
+    @if (d.cortes_entrada && d.cortes_entrada.length > 0) {
+      <div class="panel panel-entrada">
+        <div class="panel-title panel-title-entrada">
+          <mat-icon>input</mat-icon> Cortes en enlace de entrada al concentrador
+        </div>
+        <p class="panel-hint-entrada">
+          Cortes detectados en el enlace entre la central y el concentrador.
+          Esta información es referencial y no afecta el cálculo de indisponibilidad.
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ENLACE</th><th>INICIO</th><th>FIN</th><th>DURACIÓN</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of d.cortes_entrada; track c.inicio + c.enlace) {
+              <tr>
+                <td class="mono enlace-cell">{{ c.enlace }}</td>
+                <td class="mono">{{ horaCorta(c.inicio) }}</td>
+                <td class="mono">{{ horaCorta(c.fin) }}</td>
+                <td class="mono" [class.val-red]="!c.bajo_tolerancia" [class.val-muted]="c.bajo_tolerancia">
+                  {{ segToHms(c.dur_seg) }}
+                  <span class="seg-note">({{ c.dur_seg | number:'1.0-0' }} seg)</span>
+                  @if (c.bajo_tolerancia) {
+                    <span class="badge-tol" matTooltip="Menor a tolerancia">< tol</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
     <!-- Tabla DAT -->
     @if (d.periodos_dat.length > 0) {
       <div class="panel">
@@ -215,7 +251,7 @@
                   <th>DIRECTO</th><th>BACKUP</th><th>CORTE</th>
                 }
                 <th>TIPO</th>
-                <th>ESPERADOS</th><th>RECIBIDOS</th><th>BUENOS</th>
+                <th>ESPERADOS</th><th>RECIBIDOS</th><th>BUENOS</th><th>MANUALES</th>
                 <th>NO REC.</th><th>INVÁLIDOS</th>
                 <th></th>
               </tr>
@@ -238,6 +274,7 @@
                   <td class="mono">{{ p.esperados   | number:'1.0-1' }}</td>
                   <td class="mono">{{ p.recibidos   | number:'1.0-1' }}</td>
                   <td class="mono">{{ p.buenos      | number:'1.0-1' }}</td>
+                  <td class="mono">{{ p.manuales    | number:'1.0-1' }}</td>
                   <td class="mono" [class.val-red]="p.norecibidos > 0">{{ p.norecibidos | number:'1.0-1' }}</td>
                   <td class="mono" [class.val-orange]="p.invalidos  > 0">{{ p.invalidos  | number:'1.0-1' }}</td>
                   <td>

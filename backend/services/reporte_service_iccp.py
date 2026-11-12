@@ -744,7 +744,7 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
             key = pd.Timestamp(r["fecha"]).isoformat()
             result.setdefault(key, {
                 "esperados": 0.0, "recibidos": 0.0, "buenos": 0.0,
-                "norecibidos": 0.0, "invalidos": 0.0,
+                "norecibidos": 0.0, "invalidos": 0.0, "manuales": 0.0,
                 "ui_norec": 0.0, "ui_noval": 0.0,
             })
             result[key]["esperados"] += float(r.get("esperados", 0) or 0)
@@ -752,6 +752,7 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
             result[key]["buenos"] += float(r.get("buenos", 0) or 0)
             result[key]["norecibidos"] += float(r.get("norecibidos", 0) or 0)
             result[key]["invalidos"] += float(r.get("invalidos", 0) or 0)
+            result[key]["manuales"] += float(r.get("manuales", 0) or 0)
             result[key]["ui_norec"] += float(r.get("ui_norecibidas", 0) or 0)
             result[key]["ui_noval"] += float(r.get("ui_invalidas", 0) or 0)
         return result
@@ -793,7 +794,7 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
         periodos = [{"intervalo_fin": k, "enlace": "unico", **v}
                     for k, v in sorted(_periodos_dat(id_e).items())]
 
-        return {
+        result = {
             "central": nemo, "tipo": tipo,
             "ind_total_seg": float(valores.get("ind_total_norm", 0.0)) if valores else 0.0,
             "inconsistencias": [],
@@ -801,6 +802,11 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
             "cortes_efectivos": cortes,
             "periodos_dat": periodos,
         }
+        from services.reporte_service import _cortes_enlace_entrada
+        ce = _cortes_enlace_entrada(id_central, ini, fin, db)
+        if ce is not None:
+            result["cortes_entrada"] = ce
+        return result
 
     # ─── Tipo 2 ───────────────────────────────────────────────────────
     id_prim = _get_enlace_directo(id_central, db)
@@ -876,7 +882,7 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
         prim_w = _w(dat_prim.get(k, {}), frac_p)
         bck_w = _w(dat_bck.get(k, {}), frac_b)
         combined = {}
-        for campo in ("esperados", "recibidos", "buenos", "norecibidos", "invalidos", "ui_norec", "ui_noval"):
+        for campo in ("esperados", "recibidos", "buenos", "norecibidos", "invalidos", "manuales", "ui_norec", "ui_noval"):
             combined[campo] = prim_w.get(campo, 0.0) + bck_w.get(campo, 0.0)
 
         tipo_periodo = "excluido" if frac_gap > 0 else "normal"
@@ -886,7 +892,7 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
             "tipo_periodo": tipo_periodo, **combined,
         })
 
-    return {
+    result = {
         "central": nemo, "tipo": tipo,
         "ind_total_seg": ind_total_seg,
         "corte_efectivo_seg": corte_ef_seg_neto,
@@ -901,3 +907,8 @@ def detalle_central_iccp(id_central: int, ini: datetime, fin: datetime,
         "eventos_bck": _eventos_enlace(id_bck),
         "periodos_dat": periodos_lista,
     }
+    from services.reporte_service import _cortes_enlace_entrada
+    ce = _cortes_enlace_entrada(id_central, ini, fin, db)
+    if ce is not None:
+        result["cortes_entrada"] = ce
+    return result

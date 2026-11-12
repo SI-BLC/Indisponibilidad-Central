@@ -34,6 +34,7 @@ export interface DetallePeriodoDat {
   buenos: number;
   norecibidos: number;
   invalidos: number;
+  manuales: number;
   ui_norec: number;
   ui_noval: number;
 }
@@ -43,6 +44,14 @@ export interface DetalleInconsistencia {
   descripcion: string;
   t1: string;
   t2: string;
+}
+
+export interface CorteEntrada {
+  enlace: string;
+  inicio: string;
+  fin: string;
+  dur_seg: number;
+  bajo_tolerancia: boolean;
 }
 
 export interface DetalleCentral {
@@ -57,6 +66,7 @@ export interface DetalleCentral {
   periodos_dat: DetallePeriodoDat[];
   eventos_prim?: DetalleEnlaceEvento[];
   eventos_bck?: DetalleEnlaceEvento[];
+  cortes_entrada?: CorteEntrada[];
   error?: string;
 }
 
